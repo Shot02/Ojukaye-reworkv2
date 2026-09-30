@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Service{% endblock %}
+
+{% block body %}
+<div class="app">
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link"><i class="fas fa-house"></i> Home</a>
+                <a href="{% url 'news:online_news' %}" class="side-link"><i class="fas fa-newspaper"></i> News</a>
+                <a href="{% url 'core:search' %}" class="side-link"><i class="fas fa-search"></i> Search</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> Resources</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:about' %}" class="side-link"><i class="fas fa-circle-info"></i> About Us</a>
+                <a href="{% url 'core:help_center' %}" class="side-link"><i class="fas fa-circle-question"></i> Help Center</a>
+                <a href="{% url 'core:contact' %}" class="side-link"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="{% url 'core:privacy' %}" class="side-link"><i class="fas fa-shield-halved"></i> Privacy</a>
+                <a href="{% url 'core:terms' %}" class="side-link active"><i class="fas fa-file-contract"></i> Terms</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+        <div class="card">
+            <div class="article-wrap">
+                <h1 class="article-title">Terms of Service</h1>
+                <p style="font-size: 12.5px; color: var(--text-3); margin-bottom: 20px;">
+                    Last updated: {% now "F Y" %}
+                </p>
+
+                <div class="article-body">
+                    <p style="margin-bottom: 16px;">By using Ojukaye, you agree to these terms. If you don't agree, don't use the site.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">1. Your account</h2>
+                    <p style="margin-bottom: 16px;">You're responsible for what happens under your account. Keep your password private. Don't share your login. If you suspect your account was compromised, change your password immediately and email <a href="mailto:help@ojukaye.com">help@ojukaye.com</a>.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">2. Content you post</h2>
+                    <p style="margin-bottom: 16px;">You own what you post. By posting, you give Ojukaye a license to display, distribute, and moderate it. You agree not to post anything that:</p>
+                    <ul style="margin-left: 20px; margin-bottom: 16px; line-height: 1.8;">
+                        <li>Is illegal in Nigeria</li>
+                        <li>Harasses, threatens, or doxxes another person</li>
+                        <li>Is spam, malware, or a scam</li>
+                        <li>Infringes someone else's copyright</li>
+                        <li>Is deliberately false with intent to deceive</li>
+                    </ul>
+                    <p style="margin-bottom: 16px;">We may remove any content or suspend any account that violates these rules, at our discretion, without notice.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">3. News & verification</h2>
+                    <p style="margin-bottom: 16px;">Articles are pulled from third-party sources. A "Verified" badge is an algorithmic signal, not a legal statement of truth. Ojukaye isn't liable for errors in third-party reporting.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">4. Ads & paid content</h2>
+                    <p style="margin-bottom: 16px;">Sponsored posts and ads are labeled as such. We don't endorse advertised products.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">5. Service changes</h2>
+                    <p style="margin-bottom: 16px;">We may change, pause, or shut down the service at any time. We'll try to give reasonable notice for major changes.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">6. Liability</h2>
+                    <p style="margin-bottom: 16px;">Ojukaye is provided "as is." We're not liable for indirect damages arising from your use of the site. This doesn't limit any right you have under Nigerian consumer law.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">7. Contact</h2>
+                    <p>Questions about these terms? Email <a href="mailto:help@ojukaye.com">help@ojukaye.com</a>.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <aside class="col col-right"></aside>
+</div>
+{% endblock %}

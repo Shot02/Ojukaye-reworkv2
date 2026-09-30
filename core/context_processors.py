@@ -19,4 +19,20 @@ def site_context(request):
         except Exception:
             context['notification_count'] = 0
 
+    # Social media links from SystemSettings (safe fallback)
+    try:
+        from core.models import SystemSettings
+        s = SystemSettings.get_settings()
+        context['site_socials'] = {
+            'facebook': s.facebook_url,
+            'twitter': s.twitter_url,
+            'instagram': s.instagram_url,
+            'linkedin': s.linkedin_url,
+            'youtube': s.youtube_url,
+            'telegram': s.telegram_url,
+            'whatsapp': s.whatsapp_number,
+        }
+    except Exception:
+        context['site_socials'] = {}
+
     return context

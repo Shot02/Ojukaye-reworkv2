@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us{% endblock %}
+
+{% block body %}
+<div class="app">
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link"><i class="fas fa-house"></i> Home</a>
+                <a href="{% url 'news:online_news' %}" class="side-link"><i class="fas fa-newspaper"></i> News</a>
+                <a href="{% url 'core:search' %}" class="side-link"><i class="fas fa-search"></i> Search</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> Resources</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:about' %}" class="side-link"><i class="fas fa-circle-info"></i> About Us</a>
+                <a href="{% url 'core:help_center' %}" class="side-link"><i class="fas fa-circle-question"></i> Help Center</a>
+                <a href="{% url 'core:contact' %}" class="side-link active"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="{% url 'core:privacy' %}" class="side-link"><i class="fas fa-shield-halved"></i> Privacy</a>
+                <a href="{% url 'core:terms' %}" class="side-link"><i class="fas fa-file-contract"></i> Terms</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+        <div class="card">
+            <div class="article-wrap">
+                <h1 class="article-title">Contact Us</h1>
+                <p style="font-size: 14px; color: var(--text-2); margin-bottom: 24px;">
+                    Have a question, a bug report, or a partnership enquiry? Send us a message.
+                </p>
+
+                {% if submitted %}
+                <div class="alert alert-success" style="margin-bottom: 20px;">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Thanks — your message has been received. We'll get back to you within a few days.</span>
+                </div>
+                {% endif %}
+
+                <form method="post" style="max-width: 560px;">
+                    {% csrf_token %}
+
+                    <div class="form-grid-2" style="margin-bottom: 14px;">
+                        <div>
+                            <label class="field-label">Your name *</label>
+                            <input type="text" name="name" required>
+                        </div>
+                        <div>
+                            <label class="field-label">Email *</label>
+                            <input type="email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label class="field-label">Subject</label>
+                        <input type="text" name="subject" placeholder="What's this about?">
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label class="field-label">Message *</label>
+                        <textarea name="message" rows="6" required placeholder="Tell us what's on your mind…"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Send message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> Other ways to reach us</div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-2); line-height: 1.7;">
+                <p style="margin-bottom: 10px;">
+                    <strong style="color: var(--text);">Editorial:</strong><br>
+                    news@ojukaye.com
+                </p>
+                <p style="margin-bottom: 10px;">
+                    <strong style="color: var(--text);">Business:</strong><br>
+                    ads@ojukaye.com
+                </p>
+                <p style="margin-bottom: 0;">
+                    <strong style="color: var(--text);">Support:</strong><br>
+                    help@ojukaye.com
+                </p>
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}

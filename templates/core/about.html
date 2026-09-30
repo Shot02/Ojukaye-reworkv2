@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}About Us{% endblock %}
+
+{% block body %}
+<div class="app">
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link"><i class="fas fa-house"></i> Home</a>
+                <a href="{% url 'news:online_news' %}" class="side-link"><i class="fas fa-newspaper"></i> News</a>
+                <a href="{% url 'core:search' %}" class="side-link"><i class="fas fa-search"></i> Search</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> Resources</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:about' %}" class="side-link active"><i class="fas fa-circle-info"></i> About Us</a>
+                <a href="{% url 'core:help_center' %}" class="side-link"><i class="fas fa-circle-question"></i> Help Center</a>
+                <a href="{% url 'core:contact' %}" class="side-link"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="{% url 'core:privacy' %}" class="side-link"><i class="fas fa-shield-halved"></i> Privacy</a>
+                <a href="{% url 'core:terms' %}" class="side-link"><i class="fas fa-file-contract"></i> Terms</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+        <article class="card">
+            <div class="article-wrap">
+                <h1 class="article-title">About Ojukaye</h1>
+                <div class="article-body">
+                    <p style="margin-bottom: 16px;">
+                        Ojukaye is Nigeria's modern news and discussion platform. We bring together
+                        curated reporting from trusted sources, community conversations, and
+                        AI-verified credibility signals — all in one place.
+                    </p>
+
+                    <h2 style="font-size: 18px; font-weight: 700; margin: 24px 0 10px;">What we do</h2>
+                    <p style="margin-bottom: 16px;">
+                        Every day we pull articles from leading Nigerian and international outlets,
+                        run them through our verification engine, and publish them in a clean,
+                        fast feed. You can filter by category, by source, or by media type. You can
+                        like, comment, save, and share — or submit your own news for AI review.
+                    </p>
+
+                    <h2 style="font-size: 18px; font-weight: 700; margin: 24px 0 10px;">Why it matters</h2>
+                    <p style="margin-bottom: 16px;">
+                        Misinformation spreads fast. We built Ojukaye so readers can spot the
+                        difference between a verified report and a rumor at a glance. Every article
+                        gets a credibility score. No "Verified" badge means we couldn't confirm it — read
+                        it with that in mind.
+                    </p>
+
+                    <h2 style="font-size: 18px; font-weight: 700; margin: 24px 0 10px;">Who's behind it</h2>
+                    <p style="margin-bottom: 16px;">
+                        Ojukaye is built and maintained by a small team in Nigeria. We're
+                        independent, ad-supported, and reader-first. If you spot a bug, want to
+                        suggest a feature, or want to partner with us, reach out via the
+                        <a href="{% url 'core:contact' %}">contact page</a>.
+                    </p>
+
+                    <h2 style="font-size: 18px; font-weight: 700; margin: 24px 0 10px;">Our principles</h2>
+                    <ul style="margin-left: 20px; margin-bottom: 16px; line-height: 1.8;">
+                        <li><strong>Verification over virality.</strong> A post that scores low doesn't get a badge.</li>
+                        <li><strong>Reader respect.</strong> No auto-play video. No clickbait headlines. No popups.</li>
+                        <li><strong>Local first.</strong> Nigerian reporting, Nigerian readers, Nigerian context.</li>
+                        <li><strong>Transparency.</strong> If we get something wrong, we'll say so and fix it.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <aside class="col col-right"></aside>
+</div>
+{% endblock %}

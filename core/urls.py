@@ -45,4 +45,10 @@ urlpatterns = [
 
     path('api/track-ad-impression/<uuid:ad_id>/', views.track_ad_impression, name='track_ad_impression'),
     path('api/track-ad-click/<uuid:ad_id>/', views.track_ad_click, name='track_ad_click'),
+    
+    path('about/', views.about_page, name='about'),
+    path('contact/', views.contact_page, name='contact'),
+    path('help/', views.help_page, name='help_center'),
+    path('privacy/', views.privacy_page, name='privacy'),
+    path('terms/', views.terms_page, name='terms'),
 ]

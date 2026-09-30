@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Under Maintenance{% endblock %}
+
+{% block body %}
+<div class="maintenance-wrap">
+    <div class="maintenance-card">
+        <div class="maintenance-icon">
+            <i class="fas fa-screwdriver-wrench"></i>
+        </div>
+        <h1 class="maintenance-title">We'll be right back</h1>
+        <p class="maintenance-message">
+            {{ message|default:"Ojukaye is under maintenance. Please check back soon." }}
+        </p>
+        <div class="maintenance-actions">
+            {% if user.is_authenticated %}
+            <p class="maintenance-note">
+                You're signed in{% if user.is_staff %} as staff{% endif %}. If you're a site admin,
+                <a href="{% url 'admin:login' %}?next={% url 'core:admin_dashboard' %}">sign in to the admin panel</a>
+                to manage the site.
+            </p>
+            {% endif %}
+            <button onclick="location.reload()" class="btn btn-primary">
+                <i class="fas fa-rotate-right"></i> Check again
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.maintenance-wrap {
+    min-height: calc(100vh - var(--header-h) - 260px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+.maintenance-card {
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 48px 36px;
+    box-shadow: var(--shadow-md);
+}
+.maintenance-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--brand-soft);
+    color: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin: 0 auto 20px;
+}
+.maintenance-title {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+}
+.maintenance-message {
+    font-size: 14.5px;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+.maintenance-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+.maintenance-note {
+    font-size: 12.5px;
+    color: var(--text-3);
+    line-height: 1.6;
+    margin: 0;
+}
+.maintenance-note a { color: var(--brand); }
+</style>
+{% endblock %}

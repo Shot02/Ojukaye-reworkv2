@@ -1400,3 +1400,41 @@ def track_ad_click(request, ad_id):
     analytics.update_metrics()
 
     return JsonResponse({'success': True})
+
+# ==============================================================
+#  STATIC PAGES
+# ==============================================================
+
+def about_page(request):
+    return render(request, 'core/about.html', {'title': 'About Us'})
+
+
+def contact_page(request):
+    submitted = False
+    if request.method == 'POST':
+        name = (request.POST.get('name') or '').strip()
+        email = (request.POST.get('email') or '').strip()
+        subject = (request.POST.get('subject') or '').strip()
+        message = (request.POST.get('message') or '').strip()
+
+        if name and email and message:
+            # For now, log it. You can later wire this to email or a ContactMessage model.
+            logger.info(f"Contact form: {name} <{email}> — {subject}")
+            submitted = True
+
+    return render(request, 'core/contact.html', {
+        'submitted': submitted,
+        'title': 'Contact Us',
+    })
+
+
+def help_page(request):
+    return render(request, 'core/help.html', {'title': 'Help Center'})
+
+
+def privacy_page(request):
+    return render(request, 'core/privacy.html', {'title': 'Privacy Policy'})
+
+
+def terms_page(request):
+    return render(request, 'core/terms.html', {'title': 'Terms of Service'})

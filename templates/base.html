@@ -680,10 +680,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     Nigeria's modern news and discussion platform. Stay informed, engage in meaningful conversations, and connect with your community.
                 </p>
                 <div class="footer-social">
-                    <a href="#" aria-label="Twitter" title="Twitter"><i class="fab fa-twitter"></i></a>
-                    <a href="#" aria-label="Facebook" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" aria-label="Instagram" title="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" aria-label="LinkedIn" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    {% if site_socials.facebook %}
+                    <a href="{{ site_socials.facebook }}" target="_blank" rel="noopener" aria-label="Facebook" title="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    {% endif %}
+                    {% if site_socials.twitter %}
+                    <a href="{{ site_socials.twitter }}" target="_blank" rel="noopener" aria-label="X" title="X">
+                        <i class="fab fa-x-twitter"></i>
+                    </a>
+                    {% endif %}
+                    {% if site_socials.instagram %}
+                    <a href="{{ site_socials.instagram }}" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    {% endif %}
+                    {% if site_socials.linkedin %}
+                    <a href="{{ site_socials.linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    {% endif %}
+                    {% if site_socials.youtube %}
+                    <a href="{{ site_socials.youtube }}" target="_blank" rel="noopener" aria-label="YouTube" title="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    {% endif %}
+                    {% if site_socials.telegram %}
+                    <a href="{{ site_socials.telegram }}" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram">
+                        <i class="fab fa-telegram"></i>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
 
@@ -706,11 +732,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="footer-col">
                 <h4>Resources</h4>
                 <ul>
-                    <li><a href="#">Help Center</a></li>
-                    <li><a href="#">About Us</a></li>
-                    <li><a href="#">Contact</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
+                    <li><a href="{% url 'core:about' %}">About Us</a></li>
+                    <li><a href="{% url 'core:contact' %}">Contact</a></li>
+                    <li><a href="{% url 'core:privacy' %}">Privacy Policy</a></li>
+                    <li><a href="{% url 'core:terms' %}">Terms of Service</a></li>
                 </ul>
             </div>
 

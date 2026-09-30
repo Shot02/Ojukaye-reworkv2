@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Help Center{% endblock %}
+
+{% block body %}
+<div class="app">
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link"><i class="fas fa-house"></i> Home</a>
+                <a href="{% url 'news:online_news' %}" class="side-link"><i class="fas fa-newspaper"></i> News</a>
+                <a href="{% url 'core:search' %}" class="side-link"><i class="fas fa-search"></i> Search</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> Resources</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:about' %}" class="side-link"><i class="fas fa-circle-info"></i> About Us</a>
+                <a href="{% url 'core:help_center' %}" class="side-link active"><i class="fas fa-circle-question"></i> Help Center</a>
+                <a href="{% url 'core:contact' %}" class="side-link"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="{% url 'core:privacy' %}" class="side-link"><i class="fas fa-shield-halved"></i> Privacy</a>
+                <a href="{% url 'core:terms' %}" class="side-link"><i class="fas fa-file-contract"></i> Terms</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+        <div class="card">
+            <div class="article-wrap">
+                <h1 class="article-title">Help Center</h1>
+                <p style="font-size: 14px; color: var(--text-2); margin-bottom: 24px;">
+                    Answers to the most common questions about using Ojukaye.
+                </p>
+
+                <div class="article-body">
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">Getting started</h2>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">Do I need an account to read?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">No. You can browse all news headlines and previews without signing up. To read full articles, like, comment, or save posts, you'll need a free account.</p>
+                    </details>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">How do I create an account?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">Click <strong>Register</strong> in the top right, or sign up with Google in one click. We only ask for a username and email.</p>
+                    </details>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">I forgot my password. What now?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">Go to the <a href="{% url 'accounts:login' %}">sign-in page</a> and click "Forgot password?" You'll get an email with a reset link.</p>
+                    </details>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 24px 0 8px;">Content & verification</h2>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">What does the "Verified" badge mean?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">A "Verified" badge means our AI credibility engine scored the article above 70% based on source reputation, URL safety, content quality, and language. It's a signal, not a guarantee — always read critically.</p>
+                    </details>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">I found a fake article. How do I report it?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">Email <a href="mailto:news@ojukaye.com">news@ojukaye.com</a> with the article link. Our editors review every report.</p>
+                    </details>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">Can I submit my own news?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">Yes. Go to <a href="{% url 'socialapp:create_post' %}?type=news">Create Post → News</a>. Paste the source URL and our AI will verify it before publishing.</p>
+                    </details>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 24px 0 8px;">Using the site</h2>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">How do I save a post for later?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">Click the bookmark icon on any post. Find all your saved posts under your profile menu → <strong>Saved Posts</strong>.</p>
+                    </details>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">How do I change the theme?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">Open your profile menu (top right) → Theme → pick Default, Original, or Dark. Your choice is saved to your account.</p>
+                    </details>
+
+                    <details style="margin-bottom: 12px; padding: 12px 16px; background: var(--surface-2); border-radius: var(--r); border: 1px solid var(--border);">
+                        <summary style="font-weight: 600; cursor: pointer; font-size: 14px;">Can I turn off notifications?</summary>
+                        <p style="margin-top: 8px; font-size: 13.5px; color: var(--text-2);">Yes — go to <a href="{% url 'accounts:edit_profile' %}">Edit Profile</a> → Notifications section.</p>
+                    </details>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 24px 0 8px;">Still stuck?</h2>
+                    <p style="font-size: 13.5px; color: var(--text-2);">
+                        Send us a message via the <a href="{% url 'core:contact' %}">contact page</a> and we'll get back within a few days.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <aside class="col col-right"></aside>
+</div>
+{% endblock %}

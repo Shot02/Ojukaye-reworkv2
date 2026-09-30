@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy{% endblock %}
+
+{% block body %}
+<div class="app">
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link"><i class="fas fa-house"></i> Home</a>
+                <a href="{% url 'news:online_news' %}" class="side-link"><i class="fas fa-newspaper"></i> News</a>
+                <a href="{% url 'core:search' %}" class="side-link"><i class="fas fa-search"></i> Search</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> Resources</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:about' %}" class="side-link"><i class="fas fa-circle-info"></i> About Us</a>
+                <a href="{% url 'core:help_center' %}" class="side-link"><i class="fas fa-circle-question"></i> Help Center</a>
+                <a href="{% url 'core:contact' %}" class="side-link"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="{% url 'core:privacy' %}" class="side-link active"><i class="fas fa-shield-halved"></i> Privacy</a>
+                <a href="{% url 'core:terms' %}" class="side-link"><i class="fas fa-file-contract"></i> Terms</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+        <div class="card">
+            <div class="article-wrap">
+                <h1 class="article-title">Privacy Policy</h1>
+                <p style="font-size: 12.5px; color: var(--text-3); margin-bottom: 20px;">
+                    Last updated: {% now "F Y" %}
+                </p>
+
+                <div class="article-body">
+                    <p style="margin-bottom: 16px;">This policy explains what data Ojukaye collects, why we collect it, and how you can control it. We try to keep this plain-English.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">What we collect</h2>
+                    <ul style="margin-left: 20px; margin-bottom: 16px; line-height: 1.8;">
+                        <li><strong>Account info:</strong> your username, email, hashed password, and (if you signed up with Google) the email address Google gives us.</li>
+                        <li><strong>Profile info:</strong> anything you choose to fill in — name, bio, profile photo, location, occupation.</li>
+                        <li><strong>Activity:</strong> posts you create, likes, comments, saves, and follows. This is public to logged-in users, same as most social platforms.</li>
+                        <li><strong>Technical data:</strong> IP address, browser user-agent, and session cookies. Used for security and to keep you logged in.</li>
+                    </ul>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">What we don't do</h2>
+                    <ul style="margin-left: 20px; margin-bottom: 16px; line-height: 1.8;">
+                        <li>We don't sell your personal data.</li>
+                        <li>We don't share your email with advertisers.</li>
+                        <li>We don't run third-party trackers on article pages.</li>
+                    </ul>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">Cookies</h2>
+                    <p style="margin-bottom: 16px;">We use a small number of essential cookies: one for login state, one for CSRF protection, and one for your theme preference. No advertising or analytics cookies.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">Third parties</h2>
+                    <p style="margin-bottom: 16px;">If you sign in with Google, Google processes your authentication — see <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>. We also serve ad creatives from our own servers, not third-party ad networks.</p>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">Your rights</h2>
+                    <p style="margin-bottom: 16px;">You can:</p>
+                    <ul style="margin-left: 20px; margin-bottom: 16px; line-height: 1.8;">
+                        <li>Edit or delete your profile info at any time.</li>
+                        <li>Delete any post or comment you've made.</li>
+                        <li>Request full account deletion by emailing <a href="mailto:help@ojukaye.com">help@ojukaye.com</a>.</li>
+                    </ul>
+
+                    <h2 style="font-size: 16px; font-weight: 700; margin: 20px 0 8px;">Contact</h2>
+                    <p>Questions? Email <a href="mailto:help@ojukaye.com">help@ojukaye.com</a>.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <aside class="col col-right"></aside>
+</div>
+{% endblock %}

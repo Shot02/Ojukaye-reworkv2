@@ -938,6 +938,9 @@ main input[type="file"] { display: none; }
     top: calc(100% + 8px);
     right: 0;
     width: 260px;
+    max-height: calc(100vh - var(--header-h) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--r-lg);
@@ -949,6 +952,12 @@ main input[type="file"] { display: none; }
     transition: all .15s ease;
     z-index: 200;
 }
+.nav-dropdown-menu::-webkit-scrollbar { width: 6px; }
+.nav-dropdown-menu::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 3px;
+}
+
 .nav-dropdown-menu.open {
     opacity: 1;
     visibility: visible;
@@ -963,7 +972,11 @@ main input[type="file"] { display: none; }
     border-radius: var(--r);
     background: var(--surface-2);
     margin-bottom: 6px;
+    position: sticky;
+    top: -8px;
+    z-index: 2;
 }
+
 .nav-avatar-lg {
     width: 40px; height: 40px;
     border-radius: 50%;
@@ -998,6 +1011,10 @@ main input[type="file"] { display: none; }
     color: var(--text-3);
     text-transform: uppercase;
     letter-spacing: .06em;
+    position: sticky;
+    top: 52px;
+    background: var(--surface);
+    z-index: 1;
 }
 
 .nav-dropdown-item {
@@ -2574,6 +2591,7 @@ textarea.modal-input { resize: vertical; min-height: 80px; }
         top: calc(100% + 10px);
         width: 260px;
         max-width: calc(100vw - 20px);
+        max-height: calc(100vh - var(--header-h) - 90px);  /* leaves room for bottom nav */
     }
 
     /* Hide the desktop nav-link items but keep the wrapper alive for the dropdown */
