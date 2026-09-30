@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+
+{% block sidebar_menu %}
+    <div class="drawer-section">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+                <a href="{% url 'news:online_news' %}" class="side-link">
+                    <i class="fas fa-newspaper"></i> News
+                </a>
+                <a href="{% url 'accounts:profile' user.username %}" class="side-link">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="{% url 'socialapp:saved_posts' %}" class="side-link">
+                    <i class="fas fa-bookmark"></i> Saved
+                </a>
+                <a href="{% url 'socialapp:notifications' %}" class="side-link active">
+                    <i class="fas fa-bell"></i> Notifications
+                    {% if counts.unread %}<span class="count">{{ counts.unread }}</span>{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+                <a href="{% url 'news:online_news' %}" class="side-link">
+                    <i class="fas fa-newspaper"></i> News
+                </a>
+                <a href="{% url 'accounts:profile' user.username %}" class="side-link">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="{% url 'socialapp:notifications' %}" class="side-link active">
+                    <i class="fas fa-bell"></i> Notifications
+                    {% if counts.unread %}<span class="count">{{ counts.unread }}</span>{% endif %}
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h1 class="page-title">Notifications</h1>
+                <p class="page-sub">Stay updated with your latest activity</p>
+            </div>
+            {% if counts.unread %}
+            <button class="btn btn-outline btn-sm" id="markAllBtn">
+                <i class="fas fa-check-double"></i> Mark all read
+            </button>
+            {% endif %}
+        </header>
+
+        <div class="view-tabs" style="margin-bottom: 14px;">
+            <a href="?filter=all" class="view-tab {% if filter_type == 'all' %}active{% endif %}">
+                All
+                {% if counts.all %}<span class="tab-count">{{ counts.all }}</span>{% endif %}
+            </a>
+            <a href="?filter=unread" class="view-tab {% if filter_type == 'unread' %}active{% endif %}">
+                Unread
+                {% if counts.unread %}<span class="tab-count">{{ counts.unread }}</span>{% endif %}
+            </a>
+            <a href="?filter=likes" class="view-tab {% if filter_type == 'likes' %}active{% endif %}">Likes</a>
+            <a href="?filter=comments" class="view-tab {% if filter_type == 'comments' %}active{% endif %}">Comments</a>
+            <a href="?filter=follows" class="view-tab {% if filter_type == 'follows' %}active{% endif %}">Follows</a>
+        </div>
+
+        {% if notifications %}
+        <div class="card">
+            <div class="notif-list">
+                {% for notif in notifications %}
+                <div class="notif-row {% if not notif.is_read %}unread{% endif %}" data-notif-id="{{ notif.id }}">
+
+                    <div class="notif-icon">
+                        {% if notif.notification_type == 'like' %}
+                        <i class="fas fa-heart" style="color: var(--danger);"></i>
+                        {% elif notif.notification_type == 'comment' %}
+                        <i class="fas fa-comment" style="color: var(--success);"></i>
+                        {% elif notif.notification_type == 'reply' %}
+                        <i class="fas fa-reply" style="color: #8b5cf6;"></i>
+                        {% elif notif.notification_type == 'follow' %}
+                        <i class="fas fa-user-plus" style="color: var(--brand);"></i>
+                        {% elif notif.notification_type == 'mention' %}
+                        <i class="fas fa-at" style="color: var(--warning);"></i>
+                        {% elif notif.notification_type == 'news_approved' %}
+                        <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                        {% elif notif.notification_type == 'news_rejected' %}
+                        <i class="fas fa-times-circle" style="color: var(--danger);"></i>
+                        {% else %}
+                        <i class="fas fa-bell" style="color: var(--text-3);"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="notif-content">
+                        <div class="notif-text">
+                            {% if notif.from_user %}
+                            <a href="{% url 'accounts:profile' notif.from_user.username %}" class="notif-user">
+                                {{ notif.from_user.get_full_name|default:notif.from_user.username }}
+                            </a>
+                            {% endif %}
+                            <span>{{ notif.message }}</span>
+                        </div>
+
+                        {% if notif.post %}
+                        <a href="{% url 'news:post_detail' notif.post.id %}" class="notif-post-link">
+                            <i class="fas fa-file-alt" style="font-size: 10px;"></i>
+                            {{ notif.post.title|default:notif.post.content|truncatechars:60 }}
+                        </a>
+                        {% endif %}
+
+                        <div class="notif-time">{{ notif.created_at|timesince }} ago</div>
+                    </div>
+
+                    <div class="notif-actions">
+                        <button class="notif-action-btn delete-btn" data-notif-id="{{ notif.id }}" title="Delete">
+                            <i class="far fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <div class="pager">
+                {% if page_obj.has_previous %}
+                <a href="?filter={{ filter_type }}&page={{ page_obj.previous_page_number }}" class="btn btn-outline">
+                    <i class="fas fa-chevron-left"></i> Prev
+                </a>
+                {% endif %}
+                <span class="btn btn-outline" style="cursor:default;">
+                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                </span>
+                {% if page_obj.has_next %}
+                <a href="?filter={{ filter_type }}&page={{ page_obj.next_page_number }}" class="btn btn-outline">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% else %}
+        <div class="card empty-card">
+            <i class="fas fa-bell-slash"></i>
+            <h3>No notifications</h3>
+            <p>
+                {% if filter_type == 'unread' %}
+                You're all caught up!
+                {% else %}
+                When people interact with your posts, you'll see it here.
+                {% endif %}
+            </p>
+            {% if filter_type != 'all' %}
+            <a href="?filter=all" class="btn btn-outline" style="margin-top: 16px;">View all notifications</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> About</div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-2);">
+                You get notified when someone likes, comments, replies, mentions, or follows you.
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<nav class="mobile-nav">
+    <a href="{% url 'core:home' %}"><i class="fas fa-house"></i><span>Home</span></a>
+    <a href="{% url 'news:online_news' %}"><i class="fas fa-newspaper"></i><span>News</span></a>
+    <a href="{% url 'news:online_news' %}?sort=trending"><i class="fas fa-fire"></i><span>Trending</span></a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'accounts:profile' user.username %}"><i class="fas fa-user"></i><span>Profile</span></a>
+    {% else %}
+    <a href="{% url 'accounts:login' %}"><i class="fas fa-user"></i><span>Sign in</span></a>
+    {% endif %}
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.notif-list { display: flex; flex-direction: column; }
+.notif-row {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+    align-items: flex-start;
+}
+.notif-row:last-child { border-bottom: none; }
+.notif-row:hover { background: var(--surface-2); }
+.notif-row.unread { background: var(--brand-soft); }
+.notif-row.unread:hover { background: #dbeafe; }
+.notif-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.notif-content { flex: 1; min-width: 0; }
+.notif-text { font-size: 13.5px; color: var(--text); line-height: 1.5; margin-bottom: 4px; }
+.notif-user { font-weight: 700; color: var(--text); text-decoration: none; }
+.notif-user:hover { color: var(--brand); }
+.notif-post-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--brand);
+    padding: 4px 10px;
+    background: var(--surface);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    margin-top: 4px;
+    text-decoration: none;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.notif-post-link:hover { border-color: var(--brand); }
+.notif-time { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.notif-actions { display: flex; align-items: flex-start; flex-shrink: 0; }
+.notif-action-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    color: var(--text-3);
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+    font-size: 12px;
+}
+.notif-action-btn:hover { background: var(--danger-bg); color: var(--danger); }
+
+.view-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.view-tabs::-webkit-scrollbar { display: none; }
+.view-tab {
+    padding: 8px 14px;
+    border-radius: var(--r-full);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.view-tab:hover { border-color: var(--border-strong); color: var(--text); }
+.view-tab.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.view-tab .tab-count {
+    font-size: 10.5px;
+    background: rgba(0,0,0,.08);
+    color: inherit;
+    padding: 1px 6px;
+    border-radius: var(--r-full);
+    font-weight: 700;
+}
+.view-tab.active .tab-count { background: rgba(255,255,255,.25); }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const id = this.dataset.notifId;
+            const row = document.querySelector(`.notif-row[data-notif-id="${id}"]`);
+            this.disabled = true;
+
+            try {
+                const res = await fetch(`/social/notifications/${id}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    row.style.transition = 'opacity .3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        if (!document.querySelector('.notif-row')) {
+                            window.location.reload();
+                        }
+                    }, 300);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+
+    const markAllBtn = document.getElementById('markAllBtn');
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking…';
+            try {
+                const res = await fetch('{% url "socialapp:mark_all_read" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error(err);
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-check-double"></i> Mark all read';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{# Right sidebar content that gets migrated into the drawer's "Discover" section on mobile #}
+
+{% if trending_posts %}
+<div class="drawer-section">
+    <div class="card">
+        <div class="card-head"><i class="fas fa-fire"></i> Trending</div>
+        <div class="card-body flush">
+            {% for post in trending_posts %}
+            <a href="{% url 'news:post_detail' post.id %}" class="side-link">
+                <i class="fas fa-arrow-trend-up" style="color:var(--brand);"></i>
+                <span style="font-size:13px;line-height:1.35;">{{ post.title|truncatechars:55 }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if top_sources %}
+<div class="drawer-section">
+    <div class="card">
+        <div class="card-head"><i class="fas fa-globe"></i> Top Sources</div>
+        <div class="card-body flush">
+            {% for s in top_sources %}
+            <a href="?q={{ s.external_source|urlencode }}" class="side-link">
+                <i class="fas fa-newspaper"></i>
+                {{ s.external_source|truncatechars:22 }}
+                <span class="count">{{ s.count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <!-- LEFT -->
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+                <a href="{% url 'accounts:profile' user.username %}" class="side-link">
+                    <i class="fas fa-user"></i> My Profile
+                </a>
+                <a href="{% url 'accounts:edit_profile' %}" class="side-link active">
+                    <i class="fas fa-pen"></i> Edit Profile
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- CENTER: form -->
+    <main class="col col-center">
+        <header class="page-head">
+            <h1 class="page-title">Edit Profile</h1>
+            <p class="page-sub">Update your personal information and preferences</p>
+        </header>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- MEDIA -->
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-camera"></i> Profile Media</div>
+                <div class="card-body">
+                    <div class="form-grid-2" style="gap: 16px;">
+
+                        <div>
+                            <label class="field-label">Profile Picture</label>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div id="avatarPreview" style="width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 26px; flex-shrink: 0;">
+                                    {% if profile.profile_pic %}
+                                    <img src="{{ profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                    {{ user.username|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <label for="{{ profile_form.profile_pic.id_for_label }}" class="btn btn-outline btn-sm" style="cursor: pointer;">
+                                        <i class="fas fa-upload"></i> Choose file
+                                    </label>
+                                    {{ profile_form.profile_pic }}
+                                    <p style="font-size: 11px; color: var(--text-3); margin-top: 4px;">JPG or PNG · max 2MB</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="field-label">Cover Photo</label>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div id="coverPreview" style="width: 120px; height: 60px; border-radius: 8px; overflow: hidden; background: linear-gradient(135deg, #dbeafe, #3b82f6); flex-shrink: 0;">
+                                    {% if profile.cover_photo %}
+                                    <img src="{{ profile.cover_photo.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% endif %}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <label for="{{ profile_form.cover_photo.id_for_label }}" class="btn btn-outline btn-sm" style="cursor: pointer;">
+                                        <i class="fas fa-upload"></i> Choose file
+                                    </label>
+                                    {{ profile_form.cover_photo }}
+                                    <p style="font-size: 11px; color: var(--text-3); margin-top: 4px;">1500×500 recommended</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERSONAL -->
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-user"></i> Personal Information</div>
+                <div class="card-body">
+                    <div class="form-grid-2" style="margin-bottom: 14px;">
+                        <div>
+                            <label class="field-label">First name</label>
+                            {{ user_form.first_name }}
+                        </div>
+                        <div>
+                            <label class="field-label">Last name</label>
+                            {{ user_form.last_name }}
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label class="field-label">Email</label>
+                        {{ user_form.email }}
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label class="field-label">Bio</label>
+                        {{ profile_form.bio }}
+                        <p style="font-size: 11px; color: var(--text-3); margin-top: 4px;">
+                            <span id="bioCount">0</span> / 500 characters
+                        </p>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div>
+                            <label class="field-label">Location</label>
+                            {{ profile_form.location }}
+                        </div>
+                        <div>
+                            <label class="field-label">Occupation</label>
+                            {{ profile_form.occupation }}
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 14px;">
+                        <label class="field-label">Website</label>
+                        {{ profile_form.website }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOCIAL -->
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-share-nodes"></i> Social Links</div>
+                <div class="card-body">
+                    <div class="form-grid-2">
+                        <div>
+                            <label class="field-label"><i class="fab fa-twitter"></i> Twitter handle</label>
+                            {{ profile_form.twitter_handle }}
+                        </div>
+                        <div>
+                            <label class="field-label"><i class="fab fa-facebook"></i> Facebook URL</label>
+                            {{ profile_form.facebook_url }}
+                        </div>
+                        <div>
+                            <label class="field-label"><i class="fab fa-instagram"></i> Instagram URL</label>
+                            {{ profile_form.instagram_url }}
+                        </div>
+                        <div>
+                            <label class="field-label"><i class="fab fa-linkedin"></i> LinkedIn URL</label>
+                            {{ profile_form.linkedin_url }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERESTS -->
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-heart"></i> Interests</div>
+                <div class="card-body">
+                    <label class="field-label">Comma-separated (e.g. Technology, Sports, Politics)</label>
+                    {{ profile_form.interests }}
+                </div>
+            </div>
+
+            <!-- PRIVACY -->
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-shield-halved"></i> Privacy & Notifications</div>
+                <div class="card-body" style="display: flex; flex-direction: column; gap: 12px;">
+
+                    <div>
+                        <label class="field-label">Profile visibility</label>
+                        {{ profile_form.privacy_level }}
+                    </div>
+
+                    <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer;">
+                        {{ profile_form.show_online_status }}
+                        <span>Show my online status</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer;">
+                        {{ profile_form.email_notifications }}
+                        <span>Email notifications</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer;">
+                        {{ profile_form.receive_promo_emails }}
+                        <span>Promotional emails</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer;">
+                        {{ profile_form.ad_notifications }}
+                        <span>Ad notifications</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="form-row-actions">
+                <a href="{% url 'accounts:profile' user.username %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <!-- RIGHT: preview -->
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-eye"></i> Preview</div>
+            <div class="card-body">
+                <div style="height: 60px; border-radius: 8px; background: linear-gradient(135deg, #dbeafe, #3b82f6); margin-bottom: 24px; position: relative;">
+                    <div style="position: absolute; bottom: -22px; left: 16px; width: 52px; height: 52px; border-radius: 50%; overflow: hidden; border: 3px solid var(--surface); background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px;">
+                        {% if profile.profile_pic %}
+                        <img src="{{ profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                        {{ user.username|first|upper }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="margin-top: 26px;">
+                    <div style="font-size: 14px; font-weight: 700;">{{ user.get_full_name|default:user.username }}</div>
+                    <div style="font-size: 12px; color: var(--text-3);">@{{ user.username }}</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Bio counter
+    const bioField = document.getElementById('{{ profile_form.bio.id_for_label }}');
+    const bioCount = document.getElementById('bioCount');
+    if (bioField && bioCount) {
+        const update = () => { bioCount.textContent = bioField.value.length; };
+        bioField.addEventListener('input', update);
+        update();
+    }
+
+    // Avatar preview
+    const avatarInput = document.getElementById('{{ profile_form.profile_pic.id_for_label }}');
+    const avatarPreview = document.getElementById('avatarPreview');
+    if (avatarInput && avatarPreview) {
+        avatarInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                avatarPreview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Cover preview
+    const coverInput = document.getElementById('{{ profile_form.cover_photo.id_for_label }}');
+    const coverPreview = document.getElementById('coverPreview');
+    if (coverInput && coverPreview) {
+        coverInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                coverPreview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+});
+</script>
+{% endblock %}

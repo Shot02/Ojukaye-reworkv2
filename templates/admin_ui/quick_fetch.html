@@ -1,0 +1,583 @@
+{% extends 'base.html' %}
+{% block title %}Quick Fetch{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-gauge"></i> Admin</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:admin_dashboard' %}" class="side-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="{% url 'core:admin_posts' %}" class="side-link"><i class="fas fa-file-alt"></i> Manage Posts</a>
+                <a href="{% url 'core:admin_quick_fetch' %}" class="side-link active"><i class="fas fa-bolt"></i> Quick Fetch</a>
+                <a href="{% url 'core:admin_sources' %}" class="side-link"><i class="fas fa-globe"></i> Sources</a>
+                <a href="{% url 'core:admin_subscribers' %}" class="side-link"><i class="fas fa-envelope"></i> Subscribers</a>
+                <a href="{% url 'core:admin_settings' %}" class="side-link"><i class="fas fa-cog"></i> Settings</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">Quick Fetch</h1>
+            <p class="page-sub">Trigger a news fetch and watch it run live</p>
+        </header>
+
+        <div class="mini-stats">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats.total }}</div>
+                <div class="mini-stat-label">Total fetched</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value" style="color: var(--success);">{{ stats.today }}</div>
+                <div class="mini-stat-label">Last 24h</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats.with_video }}</div>
+                <div class="mini-stat-label">With video</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats.with_audio }}</div>
+                <div class="mini-stat-label">With audio</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value" style="color: var(--success);">{{ stats.verified }}</div>
+                <div class="mini-stat-label">Verified</div>
+            </div>
+        </div>
+
+        <!-- ============ AUTO-FETCH SCHEDULER ============ -->
+        <div class="card" style="margin-bottom: 14px;">
+            <div class="card-head">
+                <i class="fas fa-clock"></i> Auto-Fetch Scheduler
+                <span id="schedulerStatusBadge" class="scheduler-badge" style="margin-left: auto;">Loading…</span>
+            </div>
+            <div class="card-body">
+
+                <!-- Master on/off -->
+                <div class="scheduler-master">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--text);">Background Fetcher</div>
+                        <div style="font-size: 12.5px; color: var(--text-3); margin-top: 2px;">
+                            Turn on to run the fetch automatically in the background.
+                        </div>
+                    </div>
+                    <button id="schedulerToggleBtn" class="btn btn-outline btn-sm">
+                        <i class="fas fa-power-off"></i> <span id="schedulerToggleText">Loading…</span>
+                    </button>
+                </div>
+
+                <div class="scheduler-divider"></div>
+
+                <!-- Schedule config -->
+                <div class="scheduler-grid">
+                    <div class="scheduler-field">
+                        <label class="field-label">Interval</label>
+                        <select id="schedulerInterval" class="fetch-select">
+                            <option value="30min">Every 30 minutes</option>
+                            <option value="1h">Every 1 hour</option>
+                            <option value="3h">Every 3 hours</option>
+                            <option value="6h">Every 6 hours</option>
+                            <option value="12h">Every 12 hours</option>
+                            <option value="24h">Every 24 hours</option>
+                        </select>
+                    </div>
+                    <div class="scheduler-field">
+                        <label class="field-label">Max per fetch</label>
+                        <input type="number" id="schedulerMaxFetch" class="fetch-select" min="10" max="500" value="50">
+                    </div>
+                    <div class="scheduler-field">
+                        <label class="field-label">Active sources</label>
+                        <div class="scheduler-value" id="schedulerSources">—</div>
+                    </div>
+                    <div class="scheduler-field">
+                        <label class="field-label">Last run</label>
+                        <div class="scheduler-value" id="schedulerLastRun">—</div>
+                    </div>
+                </div>
+
+                <!-- Next run countdown -->
+                <div class="next-run-banner" id="nextRunBanner" style="display: none;">
+                    <i class="fas fa-hourglass-half"></i>
+                    Next auto-fetch in <strong id="nextRunCountdown">—</strong>
+                    <span id="nextRunExact" class="next-run-exact"></span>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+                    <button class="btn btn-primary btn-sm" id="schedulerSaveBtn">
+                        <i class="fas fa-save"></i> Save schedule
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="schedulerRunNowBtn">
+                        <i class="fas fa-play"></i> Run now
+                    </button>
+                    <span style="font-size: 12px; color: var(--text-3); align-self: center;">
+                        (Manual fetch below is independent)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ MANUAL FETCH ============ -->
+        <div class="card" style="margin-bottom: 14px;">
+            <div class="card-head"><i class="fas fa-cog"></i> Manual Fetch</div>
+            <div class="card-body">
+                <form id="fetchForm" class="fetch-form">
+                    <div class="fetch-grid">
+                        <div class="fetch-field">
+                            <label class="field-label">Days back</label>
+                            <select id="days" class="fetch-select">
+                                <option value="1">Last 24 hours</option>
+                                <option value="3">Last 3 days</option>
+                                <option value="7" selected>Last 7 days</option>
+                                <option value="14">Last 14 days</option>
+                                <option value="30">Last 30 days</option>
+                            </select>
+                        </div>
+                        <div class="fetch-field">
+                            <label class="field-label">Max articles</label>
+                            <select id="limit" class="fetch-select">
+                                <option value="10">10 articles (quick)</option>
+                                <option value="20" selected>20 articles</option>
+                                <option value="50">50 articles</option>
+                                <option value="100">100 articles</option>
+                                <option value="200">200 articles (large)</option>
+                            </select>
+                        </div>
+                        <div class="fetch-field">
+                            <label class="field-label">Workers</label>
+                            <select id="workers" class="fetch-select">
+                                <option value="2">2 (light)</option>
+                                <option value="5" selected>5 (balanced)</option>
+                                <option value="10">10 (fast)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="fetch-field" style="margin: 14px 0;">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="extract_full" checked>
+                            <span>Extract full content + media (slower but richer)</span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-primary" id="startFetchBtn">
+                            <i class="fas fa-play"></i> Start Fetch
+                        </button>
+                        <a href="{% url 'core:admin_posts' %}?filter=auto_news" class="btn btn-outline">
+                            <i class="fas fa-list"></i> View fetched
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============ PROGRESS ============ -->
+        <div class="card" id="progressCard" style="display: none; margin-bottom: 14px;">
+            <div class="card-head" style="justify-content: space-between;">
+                <span id="progressTitle"><i class="fas fa-spinner fa-spin"></i> Fetching…</span>
+                <span class="fetch-status-badge running" id="progressBadge">Running</span>
+            </div>
+            <div class="card-body" style="background: #0f172a; color: #e2e8f0; font-family: monospace; font-size: 12.5px; max-height: 400px; overflow-y: auto; padding: 14px;" id="progressLog">
+                <div>Starting…</div>
+            </div>
+        </div>
+
+        <!-- ============ RESULT ============ -->
+        <div class="card" id="resultCard" style="display: none; margin-bottom: 14px;">
+            <div class="card-head"><i class="fas fa-check-circle" style="color: var(--success);"></i> Fetch Complete</div>
+            <div class="card-body">
+                <div class="result-grid" id="resultGrid"></div>
+            </div>
+        </div>
+
+        <!-- ============ LOGS ============ -->
+        <div class="card">
+            <div class="card-head"><i class="fas fa-history"></i> Recent Fetch Logs</div>
+            <div class="card-body" style="padding: 0;">
+                {% if recent_logs %}
+                <div class="logs-list">
+                    {% for log in recent_logs %}
+                    <div class="log-row">
+                        <div class="log-icon">
+                            {% if log.action == 'manual_fetch' %}
+                            <i class="fas fa-bolt" style="color: var(--brand);"></i>
+                            {% elif log.action == 'pipeline_run' %}
+                            <i class="fas fa-robot" style="color: var(--success);"></i>
+                            {% else %}
+                            <i class="fas fa-circle" style="color: var(--text-3); font-size: 8px;"></i>
+                            {% endif %}
+                        </div>
+                        <div class="log-content">
+                            <div class="log-action">{{ log.action|title }}</div>
+                            <div class="log-details">{{ log.details|truncatechars:100 }}</div>
+                        </div>
+                        <div class="log-time">{{ log.created_at|timesince }} ago</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="padding: 30px; text-align: center;">
+                    <p style="font-size: 13px; color: var(--text-3);">No fetch logs yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-info-circle"></i> Tips</div>
+            <div class="card-body" style="font-size: 12.5px; color: var(--text-2); line-height: 1.7;">
+                <p style="margin-bottom: 8px;">✓ Scheduler runs automatically when the server is on.</p>
+                <p style="margin-bottom: 8px;">✓ Extract full content is slower but richer.</p>
+                <p style="margin-bottom: 8px;">✓ AI verification runs on every fetch.</p>
+                <p style="margin-bottom: 8px;">✓ New sources are picked up automatically.</p>
+                <p style="margin: 0;">✓ Fetches are deduped automatically.</p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.mini-stats { display: flex; gap: 8px; margin-bottom: 14px; }
+.mini-stat { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; text-align: center; }
+.mini-stat-value { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.mini-stat-label { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.scheduler-badge { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: var(--r-full); text-transform: uppercase; letter-spacing: .04em; background: var(--surface-2); color: var(--text-3); }
+.scheduler-badge.active { background: var(--success-bg); color: var(--success-text); }
+.scheduler-badge.inactive { background: var(--danger-bg); color: var(--danger-text); }
+
+.scheduler-master { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; }
+.scheduler-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+.scheduler-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+.scheduler-field { min-width: 0; }
+.scheduler-value { padding: 10px 12px; background: var(--surface-2); border-radius: var(--r-sm); font-size: 12.5px; color: var(--text-2); font-family: monospace; min-height: 40px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.next-run-banner { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: var(--brand-soft); border: 1px solid var(--brand); border-radius: var(--r-sm); color: var(--brand-dark); font-size: 13.5px; font-weight: 500; margin-top: 14px; }
+.next-run-banner i { font-size: 14px; }
+.next-run-banner strong { font-weight: 800; }
+.next-run-exact { font-size: 11.5px; color: var(--text-3); margin-left: auto; font-family: monospace; }
+
+.fetch-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.fetch-field { min-width: 0; }
+.fetch-select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--r-sm); font-size: 13.5px; color: var(--text); outline: none; font-family: inherit; }
+.checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; }
+.checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--brand); }
+
+.fetch-status-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--r-full); text-transform: uppercase; letter-spacing: .04em; }
+.fetch-status-badge.running { background: var(--warning-bg); color: var(--warning-text); }
+.fetch-status-badge.success { background: var(--success-bg); color: var(--success-text); }
+.fetch-status-badge.error { background: var(--danger-bg); color: var(--danger-text); }
+
+.log-line { padding: 2px 0; border-bottom: 1px solid #1e293b; }
+.log-line:last-child { border-bottom: none; }
+.log-line.success { color: #86efac; }
+.log-line.error { color: #fca5a5; }
+.log-line.warning { color: #fcd34d; }
+
+.result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.result-item { text-align: center; padding: 12px 6px; background: var(--surface-2); border-radius: var(--r); }
+.result-value { font-size: 22px; font-weight: 800; color: var(--brand); line-height: 1.1; }
+.result-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.logs-list { display: flex; flex-direction: column; }
+.log-row { display: flex; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); align-items: center; }
+.log-row:last-child { border-bottom: none; }
+.log-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.log-content { flex: 1; min-width: 0; }
+.log-action { font-size: 13px; font-weight: 600; color: var(--text); }
+.log-details { font-size: 11.5px; color: var(--text-3); }
+.log-time { font-size: 11px; color: var(--text-3); flex-shrink: 0; }
+
+@media (max-width: 900px) {
+    .scheduler-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+    .fetch-grid { grid-template-columns: 1fr; }
+    .scheduler-grid { grid-template-columns: 1fr; }
+    .next-run-exact { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    function post(url, data = {}) {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(data)) fd.append(k, v);
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+        }).then(r => r.json());
+    }
+
+    // ==================== SCHEDULER ====================
+    const schedulerBadge = document.getElementById('schedulerStatusBadge');
+    const schedulerToggleBtn = document.getElementById('schedulerToggleBtn');
+    const schedulerToggleText = document.getElementById('schedulerToggleText');
+    const schedulerInterval = document.getElementById('schedulerInterval');
+    const schedulerMaxFetch = document.getElementById('schedulerMaxFetch');
+    const schedulerSources = document.getElementById('schedulerSources');
+    const schedulerLastRun = document.getElementById('schedulerLastRun');
+    const schedulerSaveBtn = document.getElementById('schedulerSaveBtn');
+    const schedulerRunNowBtn = document.getElementById('schedulerRunNowBtn');
+    const nextRunBanner = document.getElementById('nextRunBanner');
+    const nextRunCountdown = document.getElementById('nextRunCountdown');
+    const nextRunExact = document.getElementById('nextRunExact');
+
+    let secondsUntilNext = null;
+    let countdownTimer = null;
+
+    function formatCountdown(seconds) {
+        if (seconds <= 0) return 'less than a minute';
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m ${s}s`;
+        return `${s}s`;
+    }
+
+    function startCountdown() {
+        if (countdownTimer) clearInterval(countdownTimer);
+        if (secondsUntilNext === null) return;
+
+        countdownTimer = setInterval(() => {
+            if (secondsUntilNext === null || secondsUntilNext <= 0) {
+                nextRunCountdown.textContent = 'soon';
+                return;
+            }
+            secondsUntilNext -= 1;
+            nextRunCountdown.textContent = formatCountdown(secondsUntilNext);
+        }, 1000);
+    }
+
+    function loadSchedulerStatus() {
+        fetch('{% url "core:admin_scheduler_status" %}')
+            .then(r => r.json())
+            .then(data => {
+                if (data.enabled && data.running) {
+                    schedulerBadge.textContent = 'Active';
+                    schedulerBadge.className = 'scheduler-badge active';
+                } else if (data.enabled && !data.running) {
+                    schedulerBadge.textContent = 'Paused';
+                    schedulerBadge.className = 'scheduler-badge inactive';
+                } else {
+                    schedulerBadge.textContent = 'Disabled';
+                    schedulerBadge.className = 'scheduler-badge inactive';
+                }
+
+                if (data.running) {
+                    schedulerToggleText.textContent = 'Turn off';
+                    schedulerToggleBtn.classList.remove('btn-primary');
+                    schedulerToggleBtn.classList.add('btn-outline');
+                } else {
+                    schedulerToggleText.textContent = 'Turn on';
+                    schedulerToggleBtn.classList.remove('btn-outline');
+                    schedulerToggleBtn.classList.add('btn-primary');
+                }
+
+                schedulerInterval.value = data.interval;
+                schedulerMaxFetch.value = data.max_per_fetch;
+                schedulerSources.textContent = data.source_count + ' feeds';
+                schedulerLastRun.textContent = data.last_run
+                    ? new Date(data.last_run).toLocaleString()
+                    : 'Never';
+
+                if (data.enabled && data.next_run) {
+                    nextRunBanner.style.display = 'flex';
+                    secondsUntilNext = data.seconds_until;
+                    nextRunCountdown.textContent = formatCountdown(secondsUntilNext);
+                    nextRunExact.textContent = new Date(data.next_run).toLocaleString();
+                    startCountdown();
+                } else {
+                    nextRunBanner.style.display = 'none';
+                    if (countdownTimer) clearInterval(countdownTimer);
+                }
+            })
+            .catch(err => console.error(err));
+    }
+
+    if (schedulerBadge) loadSchedulerStatus();
+
+    setInterval(() => { if (schedulerBadge) loadSchedulerStatus(); }, 60000);
+
+    if (schedulerToggleBtn) {
+        schedulerToggleBtn.addEventListener('click', async function() {
+            const isCurrentlyOn = schedulerToggleText.textContent === 'Turn off';
+            const action = isCurrentlyOn ? 'stop' : 'start';
+
+            const ok = await showConfirm(
+                isCurrentlyOn
+                    ? 'Stop the background fetcher? Auto-fetch will pause.'
+                    : 'Start the background fetcher? It will run on the schedule below.',
+                { title: isCurrentlyOn ? 'Turn off' : 'Turn on', confirmText: isCurrentlyOn ? 'Stop' : 'Start' }
+            );
+            if (!ok) return;
+
+            this.disabled = true;
+            try {
+                const data = await post('{% url "core:admin_scheduler_toggle" %}', { action });
+                if (data.success) {
+                    showAlert(data.running ? 'Background fetcher started.' : 'Background fetcher stopped.', 'Success');
+                    loadSchedulerStatus();
+                } else {
+                    showAlert(data.error || 'Failed', 'Error');
+                }
+            } catch (e) { showAlert('Something went wrong', 'Error'); }
+            finally { this.disabled = false; }
+        });
+    }
+
+    if (schedulerSaveBtn) {
+        schedulerSaveBtn.addEventListener('click', async function() {
+            try {
+                const data = await post('{% url "core:admin_scheduler_update" %}', {
+                    interval: schedulerInterval.value,
+                    max_fetch: schedulerMaxFetch.value,
+                });
+                if (data.success) {
+                    showAlert('Schedule saved.', 'Success');
+                    loadSchedulerStatus();
+                } else {
+                    showAlert(data.error || 'Failed', 'Error');
+                }
+            } catch (e) { showAlert('Something went wrong', 'Error'); }
+        });
+    }
+
+    if (schedulerRunNowBtn) {
+        schedulerRunNowBtn.addEventListener('click', async function() {
+            const ok = await showConfirm(
+                'Run a fetch right now? This won\'t affect the schedule.',
+                { title: 'Run now', confirmText: 'Run' }
+            );
+            if (!ok) return;
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching…';
+            try {
+                const data = await post('{% url "core:admin_scheduler_run_now" %}');
+                if (data.success) {
+                    showAlert(`Done — ${data.stats.saved} articles saved.`, 'Fetched');
+                    loadSchedulerStatus();
+                } else {
+                    showAlert(data.error || 'Failed', 'Error');
+                }
+            } catch (e) { showAlert('Something went wrong', 'Error'); }
+            finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-play"></i> Run now';
+            }
+        });
+    }
+
+    // ==================== MANUAL FETCH ====================
+    const startBtn = document.getElementById('startFetchBtn');
+    const progressCard = document.getElementById('progressCard');
+    const progressLog = document.getElementById('progressLog');
+    const progressBadge = document.getElementById('progressBadge');
+    const progressTitle = document.getElementById('progressTitle');
+    const resultCard = document.getElementById('resultCard');
+    const resultGrid = document.getElementById('resultGrid');
+
+    if (startBtn) {
+        startBtn.addEventListener('click', async function() {
+            const days = document.getElementById('days').value;
+            const limit = document.getElementById('limit').value;
+            const workers = document.getElementById('workers').value;
+            const extractFull = document.getElementById('extract_full').checked;
+
+            const ok = await showConfirm(
+                `Fetch up to ${limit} articles from the last ${days} day(s)?`,
+                { title: 'Start fetch', confirmText: 'Start' }
+            );
+            if (!ok) return;
+
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching…';
+
+            progressCard.style.display = 'block';
+            resultCard.style.display = 'none';
+            progressLog.innerHTML = '<div class="log-line">Starting fetch…</div>';
+            progressBadge.className = 'fetch-status-badge running';
+            progressBadge.textContent = 'Running';
+            progressTitle.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching…';
+
+            function log(msg, cls) {
+                const div = document.createElement('div');
+                div.className = 'log-line' + (cls ? ' ' + cls : '');
+                div.textContent = msg;
+                progressLog.appendChild(div);
+                progressLog.scrollTop = progressLog.scrollHeight;
+            }
+
+            log('Fetching from NewsAPI + RSS, extracting, categorizing, verifying…');
+
+            try {
+                const data = await post('{% url "core:admin_run_fetch" %}', {
+                    days: days,
+                    limit: limit,
+                    workers: workers,
+                    extract_full: extractFull ? 'true' : 'false',
+                });
+
+                if (data.success) {
+                    const s = data.stats;
+                    log(`✓ Raw fetched: ${s.total_raw}`, 'success');
+                    log(`✓ Unique: ${s.unique}`, 'success');
+                    log(`✓ Extract success: ${s.extract_success}`, 'success');
+                    log(`✓ Saved to DB: ${s.saved}`, 'success');
+                    log(`✓ Videos found: ${s.with_video}`, 'success');
+                    log(`✓ Audio found: ${s.with_audio}`, 'success');
+                    log(`✓ Duration: ${s.duration_seconds}s`, 'success');
+
+                    progressBadge.className = 'fetch-status-badge success';
+                    progressBadge.textContent = 'Done';
+                    progressTitle.innerHTML = '<i class="fas fa-check-circle" style="color: var(--success);"></i> Fetch complete';
+
+                    resultGrid.innerHTML = `
+                        <div class="result-item"><div class="result-value">${s.saved}</div><div class="result-label">Saved</div></div>
+                        <div class="result-item"><div class="result-value">${s.unique}</div><div class="result-label">Unique</div></div>
+                        <div class="result-item"><div class="result-value">${s.with_video}</div><div class="result-label">Videos</div></div>
+                        <div class="result-item"><div class="result-value">${s.with_audio}</div><div class="result-label">Audio</div></div>
+                        <div class="result-item"><div class="result-value">${s.with_image}</div><div class="result-label">Images</div></div>
+                        <div class="result-item"><div class="result-value">${s.duration_seconds}s</div><div class="result-label">Duration</div></div>
+                    `;
+                    resultCard.style.display = 'block';
+
+                    showAlert(`Fetch complete! ${s.saved} articles saved and verified.`, 'Success');
+                    setTimeout(() => window.location.reload(), 3000);
+                } else {
+                    log('✗ Error: ' + (data.error || 'Unknown error'), 'error');
+                    progressBadge.className = 'fetch-status-badge error';
+                    progressBadge.textContent = 'Error';
+                    showAlert(data.error || 'Fetch failed', 'Error');
+                }
+            } catch (e) {
+                log('✗ Request failed: ' + e.message, 'error');
+                progressBadge.className = 'fetch-status-badge error';
+                progressBadge.textContent = 'Error';
+                showAlert('Something went wrong', 'Error');
+            } finally {
+                startBtn.disabled = false;
+                startBtn.innerHTML = '<i class="fas fa-play"></i> Start Fetch';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

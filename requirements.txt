@@ -1,0 +1,22 @@
+Django
+python-decouple
+mysqlclient
+django-crispy-forms
+crispy-bootstrap4
+whitenoise
+requests
+feedparser
+beautifulsoup4
+newspaper3k
+trafilatura
+cloudscraper
+lxml_html_clean
+python-dateutil
+python-whois
+Pillow
+celery
+redis
+gunicorn
+pip install lxml-6.1.3-cp312-cp312-win_amd64.whl
+PyJWT
+requests-oauthlib

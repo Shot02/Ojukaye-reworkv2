@@ -1,0 +1,798 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="default">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>{% block title %}{{ title|default:"Ojukaye" }}{% endblock %} · Ojukaye</title>
+
+<script>
+(function() {
+    var theme = localStorage.getItem('ojukaye_theme');
+    if (!theme) {
+        var serverTheme = '{{ user.profile.theme_preference|default:"default" }}';
+        theme = (serverTheme && serverTheme !== 'None') ? serverTheme : 'default';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+
+<link rel="icon" type="image/jpeg" href="{% static 'images/logo.jpeg' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}?v={% now 'U' %}">
+
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-inner">
+
+        <!-- Mobile menu toggle (opens left drawer) -->
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <a href="{% url 'core:home' %}" class="brand">
+            <img src="{% static 'images/logo.jpeg' %}" alt="Ojukaye" class="brand-logo">
+            <span class="brand-text">OJUKAYE<span class="brand-dot">.</span></span>
+        </a>
+
+        <div class="nav-search-wrap">
+            <form class="nav-search" action="{% url 'core:search' %}" method="get" autocomplete="off">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" id="navSearchInput"
+                       placeholder="Search news, topics, people…"
+                       value="{{ request.GET.q|default:'' }}"
+                       autocomplete="off">
+            </form>
+            <div class="search-suggestions" id="searchSuggestions" style="display: none;">
+                <div class="suggestions-body" id="suggestionsBody"></div>
+            </div>
+        </div>
+
+        <nav class="nav-links">
+            <a href="{% url 'core:home' %}" class="nav-link" title="Home">
+                <i class="fas fa-house"></i><span>Home</span>
+            </a>
+            <a href="{% url 'news:online_news' %}" class="nav-link" title="News">
+                <i class="fas fa-newspaper"></i><span>News</span>
+            </a>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'socialapp:create_post' %}" class="nav-link" title="Create post">
+                    <i class="fas fa-pen-to-square"></i><span>Create</span>
+                </a>
+                <a href="{% url 'socialapp:notifications' %}" class="nav-link notification-link" title="Notifications">
+                    <i class="fas fa-bell"></i><span>Notifications</span>
+                    <span class="nav-badge" id="notificationBadge" {% if not notification_count %}style="display:none;"{% endif %}>{{ notification_count|default:0 }}</span>
+                </a>
+            {% endif %}
+
+            <!-- Profile dropdown — visible on BOTH desktop and mobile -->
+            <div class="nav-dropdown" id="navDropdown">
+                {% if user.is_authenticated %}
+                <button class="nav-profile-btn" id="navProfileBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                    <div class="nav-avatar">
+                        {% if user.profile.profile_pic %}
+                        <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}">
+                        {% else %}
+                        {{ user.username|first|upper }}
+                        {% endif %}
+                    </div>
+                    <span class="nav-username">{{ user.username }}</span>
+                    <i class="fas fa-chevron-down nav-caret"></i>
+                </button>
+                {% else %}
+                <button class="nav-profile-btn nav-profile-btn-guest" id="navProfileBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                    <div class="nav-avatar nav-avatar-guest">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="nav-username">Account</span>
+                    <i class="fas fa-chevron-down nav-caret"></i>
+                </button>
+                {% endif %}
+
+                <div class="nav-dropdown-menu" id="navDropdownMenu">
+                    {% if user.is_authenticated %}
+                    <div class="nav-dropdown-user">
+                        <div class="nav-avatar-lg">
+                            {% if user.profile.profile_pic %}
+                            <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}">
+                            {% else %}
+                            {{ user.username|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div style="min-width:0; flex:1;">
+                            <div class="nav-dropdown-name truncate">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="nav-dropdown-handle truncate">@{{ user.username }}</div>
+                        </div>
+                    </div>
+
+                    <div class="nav-dropdown-divider"></div>
+
+                    <div class="nav-dropdown-label">Theme</div>
+                    <div class="theme-switcher">
+                        <button class="theme-option" data-theme-value="default" type="button">
+                            <span class="theme-swatch theme-swatch-default"></span>
+                            <span>Default</span>
+                        </button>
+                        <button class="theme-option" data-theme-value="original" type="button">
+                            <span class="theme-swatch theme-swatch-original"></span>
+                            <span>Original</span>
+                        </button>
+                        <button class="theme-option" data-theme-value="dark" type="button">
+                            <span class="theme-swatch theme-swatch-dark"></span>
+                            <span>Dark</span>
+                        </button>
+                    </div>
+
+                    <div class="nav-dropdown-divider"></div>
+
+                    <a href="{% url 'accounts:profile' user.username %}" class="nav-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
+                    <a href="{% url 'accounts:edit_profile' %}" class="nav-dropdown-item"><i class="fas fa-pen"></i> Edit Profile</a>
+                    <a href="{% url 'socialapp:create_post' %}" class="nav-dropdown-item"><i class="fas fa-plus"></i> Create Post</a>
+                    <a href="{% url 'socialapp:saved_posts' %}" class="nav-dropdown-item"><i class="fas fa-bookmark"></i> Saved Posts</a>
+
+                    {% if user.is_staff or user.is_superuser %}
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">Admin</div>
+                    <a href="{% url 'core:admin_dashboard' %}" class="nav-dropdown-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a href="{% url 'core:admin_posts' %}" class="nav-dropdown-item"><i class="fas fa-file-alt"></i> Manage Posts</a>
+                    <a href="{% url 'core:admin_sources' %}" class="nav-dropdown-item"><i class="fas fa-globe"></i> Sources</a>
+                    <a href="{% url 'core:admin_ads' %}" class="nav-dropdown-item"><i class="fas fa-bullhorn"></i> Ads</a>
+                    <a href="{% url 'core:admin_quick_fetch' %}" class="nav-dropdown-item"><i class="fas fa-bolt"></i> Quick Fetch</a>
+                    <a href="{% url 'core:admin_subscribers' %}" class="nav-dropdown-item"><i class="fas fa-envelope"></i> Subscribers</a>
+                    <a href="{% url 'core:admin_settings' %}" class="nav-dropdown-item"><i class="fas fa-cog"></i> Settings</a>
+                    {% endif %}
+
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="{% url 'accounts:logout' %}" class="nav-dropdown-item nav-dropdown-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+
+                    {% else %}
+                    <div class="nav-dropdown-user">
+                        <div class="nav-avatar-lg nav-avatar-guest">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div style="min-width:0; flex:1;">
+                            <div class="nav-dropdown-name">Welcome</div>
+                            <div class="nav-dropdown-handle">Sign in to continue</div>
+                        </div>
+                    </div>
+
+                    <div class="nav-dropdown-divider"></div>
+
+                    <div class="nav-dropdown-label">Theme</div>
+                    <div class="theme-switcher">
+                        <button class="theme-option" data-theme-value="default" type="button">
+                            <span class="theme-swatch theme-swatch-default"></span>
+                            <span>Default</span>
+                        </button>
+                        <button class="theme-option" data-theme-value="original" type="button">
+                            <span class="theme-swatch theme-swatch-original"></span>
+                            <span>Original</span>
+                        </button>
+                        <button class="theme-option" data-theme-value="dark" type="button">
+                            <span class="theme-swatch theme-swatch-dark"></span>
+                            <span>Dark</span>
+                        </button>
+                    </div>
+
+                    <div class="nav-dropdown-divider"></div>
+
+                    <a href="{% url 'accounts:login' %}" class="nav-dropdown-item"><i class="fas fa-sign-in-alt"></i> Sign in</a>
+                    <a href="{% url 'accounts:register' %}" class="nav-dropdown-item"><i class="fas fa-user-plus"></i> Create account</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <!-- Mobile-only bell button (dropdown already covers profile/settings) -->
+        {% if user.is_authenticated %}
+        <a href="{% url 'socialapp:notifications' %}" class="mobile-bell notification-link" aria-label="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="nav-badge" id="notificationBadgeMobile" {% if not notification_count %}style="display:none;"{% endif %}>{{ notification_count|default:0 }}</span>
+        </a>
+        {% endif %}
+
+    </div>
+</header>
+
+<!-- ============ MOBILE NAV DRAWER (left slide-in) ============ -->
+<div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+
+<aside class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div class="drawer-head">
+        {% if user.is_authenticated %}
+            <a href="{% url 'accounts:profile' user.username %}" class="drawer-user">
+                <div class="drawer-avatar">
+                    {% if user.profile.profile_pic %}
+                    <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}">
+                    {% else %}
+                    {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+                <div class="drawer-user-info">
+                    <div class="drawer-user-name truncate">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="drawer-user-handle truncate">@{{ user.username }}</div>
+                </div>
+                <i class="fas fa-chevron-right drawer-user-arrow"></i>
+            </a>
+        {% else %}
+            <div class="drawer-guest">
+                <div class="drawer-avatar drawer-avatar-guest">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="drawer-user-info">
+                    <div class="drawer-user-name">Welcome to Ojukaye</div>
+                    <div class="drawer-user-handle">Sign in to like, comment, and save</div>
+                </div>
+            </div>
+            <div class="drawer-guest-actions">
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline btn-sm btn-block">Sign in</a>
+                <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm btn-block">Register</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="drawer-body">
+        {% block sidebar_menu %}
+        {% endblock %}
+
+        {% block sidebar_menu_extra %}
+        {% endblock %}
+    </div>
+
+    <div class="drawer-foot">
+        <div class="drawer-foot-label">Theme</div>
+        <div class="theme-switcher theme-switcher-row">
+            <button class="theme-option" data-theme-value="default" type="button">
+                <span class="theme-swatch theme-swatch-default"></span>
+                <span>Default</span>
+            </button>
+            <button class="theme-option" data-theme-value="original" type="button">
+                <span class="theme-swatch theme-swatch-original"></span>
+                <span>Original</span>
+            </button>
+            <button class="theme-option" data-theme-value="dark" type="button">
+                <span class="theme-swatch theme-swatch-dark"></span>
+                <span>Dark</span>
+            </button>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="drawer-foot-divider"></div>
+        <a href="{% url 'accounts:logout' %}" class="drawer-signout">
+            <i class="fas fa-sign-out-alt"></i> Sign out
+        </a>
+        {% endif %}
+    </div>
+</aside>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }}" data-autodismiss="1">
+        {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+        {% elif message.tags == 'error' %}<i class="fas fa-exclamation-circle"></i>
+        {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+        {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+        <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.alert[data-autodismiss]').forEach(function(el) {
+        setTimeout(function() {
+            el.style.transition = 'opacity .4s ease, transform .4s ease';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(-8px)';
+            setTimeout(() => el.remove(), 400);
+        }, 3500);
+    });
+});
+</script>
+{% endif %}
+
+{% block body %}{% endblock %}
+
+<!-- ============ GLOBAL MODAL SYSTEM ============ -->
+<div class="modal-backdrop" id="globalModalBackdrop" style="display: none;">
+    <div class="modal-box" id="globalModalBox">
+        <div class="modal-head">
+            <h3 id="globalModalTitle">Notice</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="globalModalBody">Message goes here.</div>
+        <div class="modal-foot" id="globalModalFoot">
+            <button class="btn btn-primary" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ---- Global modal system ----
+window.showAlert = function(message, title) {
+    document.getElementById('globalModalTitle').textContent = title || 'Notice';
+    document.getElementById('globalModalBody').innerHTML = message;
+    document.getElementById('globalModalFoot').innerHTML =
+        '<button class="btn btn-primary" onclick="closeModal()">OK</button>';
+    document.getElementById('globalModalBackdrop').style.display = 'flex';
+};
+
+window.showConfirm = function(message, options) {
+    return new Promise((resolve) => {
+        const opts = options || {};
+        document.getElementById('globalModalTitle').textContent = opts.title || 'Confirm';
+        document.getElementById('globalModalBody').innerHTML = message;
+        document.getElementById('globalModalFoot').innerHTML = `
+            <button class="btn btn-outline" id="modalCancelBtn">${opts.cancelText || 'Cancel'}</button>
+            <button class="btn ${opts.danger ? 'btn-danger' : 'btn-primary'}" id="modalConfirmBtn">${opts.confirmText || 'Confirm'}</button>
+        `;
+        document.getElementById('modalCancelBtn').onclick = () => { closeModal(); resolve(false); };
+        document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); resolve(true); };
+        document.getElementById('globalModalBackdrop').style.display = 'flex';
+    });
+};
+
+window.showFormModal = function(options) {
+    return new Promise((resolve) => {
+        const opts = options || {};
+        const fields = opts.fields || [];
+        document.getElementById('globalModalTitle').textContent = opts.title || 'Form';
+
+        let bodyHtml = '<form id="modalForm" onsubmit="return false;">';
+        if (opts.description) {
+            bodyHtml += `<p style="margin-bottom: 16px; color: var(--text-3); font-size: 13.5px;">${opts.description}</p>`;
+        }
+        fields.forEach(f => {
+            bodyHtml += `<div class="modal-field"><label class="modal-label">${f.label}${f.required ? ' *' : ''}</label>`;
+            if (f.type === 'select') {
+                bodyHtml += `<select name="${f.name}" class="modal-input" ${f.required ? 'required' : ''}>`;
+                (f.options || []).forEach(o => {
+                    const val = typeof o === 'string' ? o : o.value;
+                    const lbl = typeof o === 'string' ? o : o.label;
+                    const sel = (f.value === val) ? 'selected' : '';
+                    bodyHtml += `<option value="${val}" ${sel}>${lbl}</option>`;
+                });
+                bodyHtml += '</select>';
+            } else if (f.type === 'textarea') {
+                bodyHtml += `<textarea name="${f.name}" class="modal-input" placeholder="${f.placeholder || ''}" ${f.required ? 'required' : ''} rows="4">${f.value || ''}</textarea>`;
+            } else {
+                bodyHtml += `<input type="${f.type || 'text'}" name="${f.name}" class="modal-input" placeholder="${f.placeholder || ''}" value="${f.value || ''}" ${f.required ? 'required' : ''}>`;
+            }
+            bodyHtml += '</div>';
+        });
+        bodyHtml += '</form>';
+        document.getElementById('globalModalBody').innerHTML = bodyHtml;
+        document.getElementById('globalModalFoot').innerHTML = `
+            <button class="btn btn-outline" id="modalCancelBtn">${opts.cancelText || 'Cancel'}</button>
+            <button class="btn btn-primary" id="modalSubmitBtn">${opts.submitText || 'Submit'}</button>
+        `;
+        document.getElementById('modalCancelBtn').onclick = () => { closeModal(); resolve(null); };
+        document.getElementById('modalSubmitBtn').onclick = () => {
+            const form = document.getElementById('modalForm');
+            const data = {};
+            let valid = true;
+            fields.forEach(f => {
+                const el = form.querySelector(`[name="${f.name}"]`);
+                if (!el) return;
+                const val = (el.value || '').trim();
+                if (f.required && !val) { el.style.borderColor = 'var(--danger)'; valid = false; }
+                else { el.style.borderColor = ''; }
+                data[f.name] = val;
+            });
+            if (!valid) return;
+            closeModal();
+            resolve(data);
+        };
+        document.getElementById('globalModalBackdrop').style.display = 'flex';
+        setTimeout(() => {
+            const firstInput = document.querySelector('#modalForm .modal-input');
+            if (firstInput) firstInput.focus();
+        }, 100);
+    });
+};
+
+window.showHtmlModal = function(options) {
+    const opts = options || {};
+    document.getElementById('globalModalTitle').textContent = opts.title || 'Notice';
+    document.getElementById('globalModalBody').innerHTML = opts.html || '';
+    document.getElementById('globalModalFoot').innerHTML =
+        `<button class="btn btn-primary" onclick="closeModal()">${opts.closeText || 'Close'}</button>`;
+    document.getElementById('globalModalBackdrop').style.display = 'flex';
+};
+
+window.closeModal = function() {
+    const b = document.getElementById('globalModalBackdrop');
+    if (b) b.style.display = 'none';
+};
+
+document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'globalModalBackdrop') closeModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+
+// ==================== NAV DROPDOWN + DRAWER + BADGE + THEME + SEARCH ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    // ---------- Profile dropdown (desktop + mobile) ----------
+    const btn = document.getElementById('navProfileBtn');
+    const menu = document.getElementById('navDropdownMenu');
+    if (btn && menu) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            btn.classList.toggle('active');
+            menu.classList.toggle('open');
+            btn.setAttribute('aria-expanded', menu.classList.contains('open') ? 'true' : 'false');
+        });
+        document.addEventListener('click', function(e) {
+            if (!menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+                btn.classList.remove('active');
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                btn.classList.remove('active');
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // ---------- Mobile drawer ----------
+    const menuToggle = document.getElementById('menuToggle');
+    const drawer = document.getElementById('navDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    const bodyEl = document.body;
+
+    function openDrawer() {
+        if (!drawer) return;
+        drawer.classList.add('open');
+        backdrop.classList.add('open');
+        bodyEl.classList.add('drawer-open');
+        menuToggle.setAttribute('aria-expanded', 'true');
+        setTimeout(() => {
+            const first = drawer.querySelector('a, button');
+            if (first) first.focus();
+        }, 250);
+    }
+
+    function closeDrawer() {
+        if (!drawer) return;
+        drawer.classList.remove('open');
+        backdrop.classList.remove('open');
+        bodyEl.classList.remove('drawer-open');
+        menuToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleDrawer() {
+        if (drawer.classList.contains('open')) closeDrawer();
+        else openDrawer();
+    }
+
+    if (menuToggle && drawer && backdrop) {
+        menuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDrawer();
+        });
+
+        backdrop.addEventListener('click', closeDrawer);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && drawer.classList.contains('open')) {
+                closeDrawer();
+            }
+        });
+
+        drawer.querySelectorAll('a').forEach(a => {
+            a.addEventListener('click', function() {
+                setTimeout(closeDrawer, 50);
+            });
+        });
+
+        drawer.addEventListener('keydown', function(e) {
+            if (e.key !== 'Tab') return;
+            const focusables = drawer.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
+            );
+            if (!focusables.length) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        });
+
+        // Swipe open from left edge
+        let touchStartX = 0, touchStartY = 0, tracking = false;
+        document.addEventListener('touchstart', function(e) {
+            if (drawer.classList.contains('open')) return;
+            const t = e.touches[0];
+            if (t.clientX <= 24) {
+                touchStartX = t.clientX;
+                touchStartY = t.clientY;
+                tracking = true;
+            }
+        }, { passive: true });
+        document.addEventListener('touchmove', function(e) {
+            if (!tracking) return;
+            const t = e.touches[0];
+            const dx = t.clientX - touchStartX;
+            const dy = Math.abs(t.clientY - touchStartY);
+            if (dx > 60 && dy < 60) { openDrawer(); tracking = false; }
+        }, { passive: true });
+        document.addEventListener('touchend', function() { tracking = false; }, { passive: true });
+
+        // Swipe close inside drawer
+        let closeStartX = 0;
+        drawer.addEventListener('touchstart', function(e) { closeStartX = e.touches[0].clientX; }, { passive: true });
+        drawer.addEventListener('touchend', function(e) {
+            const endX = e.changedTouches[0].clientX;
+            if (endX - closeStartX > 80) closeDrawer();
+        }, { passive: true });
+    }
+
+    // ---------- Notification badge auto-refresh ----------
+    const badges = [
+        document.getElementById('notificationBadge'),
+        document.getElementById('notificationBadgeMobile'),
+    ].filter(Boolean);
+
+    if (badges.length) {
+        async function refreshCount() {
+            try {
+                const res = await fetch('{% url "socialapp:notifications_count" %}', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                badges.forEach(b => {
+                    if (data.count > 0) { b.textContent = data.count; b.style.display = 'flex'; }
+                    else { b.style.display = 'none'; }
+                });
+            } catch (e) {}
+        }
+        setInterval(refreshCount, 30000);
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) refreshCount();
+        });
+    }
+
+    // ---------- Theme switcher ----------
+    function currentTheme() { return document.documentElement.getAttribute('data-theme') || 'default'; }
+    function markActiveTheme() {
+        const current = currentTheme();
+        document.querySelectorAll('.theme-option').forEach(b => {
+            b.classList.toggle('active', b.dataset.themeValue === current);
+        });
+    }
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('ojukaye_theme', theme);
+        markActiveTheme();
+    }
+    markActiveTheme();
+
+    document.addEventListener('click', function(e) {
+        const themeBtn = e.target.closest('.theme-option');
+        if (!themeBtn) return;
+        e.preventDefault();
+        const theme = themeBtn.dataset.themeValue;
+        applyTheme(theme);
+        {% if user.is_authenticated %}
+        const fd = new FormData();
+        fd.append('theme', theme);
+        fetch('{% url "accounts:set_theme" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+        }).catch(() => {});
+        {% endif %}
+    });
+
+    {% if user.is_authenticated %}
+    if (!localStorage.getItem('ojukaye_theme')) {
+        const serverTheme = '{{ user.profile.theme_preference|default:"default" }}';
+        if (serverTheme && serverTheme !== 'None' && serverTheme !== 'default') {
+            applyTheme(serverTheme);
+        }
+    }
+    {% endif %}
+
+    // ---------- Search autocomplete ----------
+    const searchInput = document.getElementById('navSearchInput');
+    const searchBox = document.getElementById('searchSuggestions');
+    const searchBody = document.getElementById('suggestionsBody');
+    if (searchInput && searchBox && searchBody) {
+        let timer = null;
+        let activeIndex = -1;
+        function closeBox() { searchBox.style.display = 'none'; searchBody.innerHTML = ''; activeIndex = -1; }
+        function render(data) {
+            if (!data.suggestions || data.suggestions.length === 0) {
+                searchBody.innerHTML = '<div class="suggestions-empty">No suggestions</div>';
+                searchBox.style.display = 'block';
+                return;
+            }
+            activeIndex = -1;
+            searchBody.innerHTML = data.suggestions.map((s, i) => `
+                <a class="suggestion-item" href="${s.url}" data-index="${i}">
+                    <div class="suggestion-icon">
+                        ${s.avatar ? `<img src="${s.avatar}" alt="">` : `<i class="fas fa-${s.icon}"></i>`}
+                    </div>
+                    <span class="suggestion-label">${s.label}</span>
+                    <span class="suggestion-type">${s.type}</span>
+                </a>
+            `).join('');
+            searchBox.style.display = 'block';
+        }
+        searchInput.addEventListener('input', function() {
+            const q = this.value.trim();
+            clearTimeout(timer);
+            if (q.length < 2) { closeBox(); return; }
+            timer = setTimeout(() => {
+                fetch(`/search/suggestions/?q=${encodeURIComponent(q)}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(r => r.json()).then(render).catch(closeBox);
+            }, 220);
+        });
+        searchInput.addEventListener('keydown', function(e) {
+            if (searchBox.style.display !== 'block') return;
+            const items = searchBody.querySelectorAll('.suggestion-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+                items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                items[activeIndex].click();
+            } else if (e.key === 'Escape') {
+                closeBox();
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (!searchBox.contains(e.target) && e.target !== searchInput) closeBox();
+        });
+    }
+});
+</script>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+    <div class="footer-inner">
+        <div class="footer-grid">
+
+            <div class="footer-col">
+                <div class="footer-brand">
+                    <img src="{% static 'images/logo.jpeg' %}" alt="Ojukaye" class="footer-logo">
+                    <span class="footer-brand-text">OJUKAYE<span style="color: var(--brand);">.</span></span>
+                </div>
+                <p class="footer-desc">
+                    Nigeria's modern news and discussion platform. Stay informed, engage in meaningful conversations, and connect with your community.
+                </p>
+                <div class="footer-social">
+                    <a href="#" aria-label="Twitter" title="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Facebook" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram" title="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="LinkedIn" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Platform</h4>
+                <ul>
+                    <li><a href="{% url 'core:home' %}">Home</a></li>
+                    <li><a href="{% url 'news:online_news' %}">Online News</a></li>
+                    <li><a href="{% url 'core:search' %}">Search</a></li>
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'socialapp:create_post' %}">Create Post</a></li>
+                    <li><a href="{% url 'socialapp:saved_posts' %}">Saved Posts</a></li>
+                    {% else %}
+                    <li><a href="{% url 'accounts:register' %}">Register</a></li>
+                    <li><a href="{% url 'accounts:login' %}">Sign In</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Contact</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Newsletter</h4>
+                <p class="footer-desc" style="margin-bottom: 12px;">
+                    Get the top stories delivered to your inbox.
+                </p>
+                <form id="newsletterForm" class="newsletter-form" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="newsletter-input-wrap">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" id="newsletterEmail"
+                               placeholder="your@email.com" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm" id="newsletterBtn">
+                        <i class="fas fa-paper-plane"></i> Subscribe
+                    </button>
+                </form>
+                <p id="newsletterMsg" class="newsletter-msg"></p>
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Ojukaye. All rights reserved.</p>
+            <p class="footer-made">Built with care in Nigeria <i class="fas fa-heart" style="color: var(--brand);"></i></p>
+        </div>
+    </div>
+</footer>
+
+<script>
+// Newsletter signup
+(function() {
+    const form = document.getElementById('newsletterForm');
+    const input = document.getElementById('newsletterEmail');
+    const btn = document.getElementById('newsletterBtn');
+    const msg = document.getElementById('newsletterMsg');
+    if (!form) return;
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = input.value.trim();
+        if (!email) return;
+
+        btn.disabled = true;
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subscribing…';
+        msg.textContent = '';
+        msg.className = 'newsletter-msg';
+
+        try {
+            const fd = new FormData();
+            fd.append('email', email);
+            fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            const res = await fetch('{% url "core:newsletter_signup" %}', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd,
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                msg.textContent = '✓ ' + data.message;
+                msg.className = 'newsletter-msg success';
+                input.value = '';
+            } else {
+                msg.textContent = data.error || 'Something went wrong';
+                msg.className = 'newsletter-msg error';
+            }
+        } catch (err) {
+            msg.textContent = 'Something went wrong';
+            msg.className = 'newsletter-msg error';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    });
+})();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

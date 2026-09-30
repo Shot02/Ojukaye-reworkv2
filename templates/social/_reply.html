@@ -1,0 +1,55 @@
+<div class="comment-item reply-item" id="comment-{{ reply.id }}" data-comment-id="{{ reply.id }}">
+    <div class="comment-avatar" style="width: 28px; height: 28px; font-size: 11px;">
+        {% if reply.user.profile.profile_pic %}
+        <img src="{{ reply.user.profile.profile_pic.url }}" alt="{{ reply.user.username }}">
+        {% else %}
+        {{ reply.user.username|first|upper }}
+        {% endif %}
+    </div>
+    <div style="flex: 1; min-width: 0;">
+        <div class="comment-head">
+            <a href="{% url 'accounts:profile' reply.user.username %}" class="comment-author" style="font-size: 12.5px;">
+                {{ reply.user.get_full_name|default:reply.user.username }}
+            </a>
+            <span class="comment-meta">
+                @{{ reply.user.username }} · {{ reply.created_at|timesince }} ago
+            </span>
+        </div>
+
+        <p class="comment-body" style="font-size: 13px;">{{ reply.content }}</p>
+
+        <div class="comment-actions">
+            <button class="comment-action like-comment-btn {% if user in reply.likes.all %}liked{% endif %}"
+                    data-comment-id="{{ reply.id }}">
+                <i class="{% if user in reply.likes.all %}fas{% else %}far{% endif %} fa-heart"></i>
+                <span class="comment-like-count">{{ reply.likes.count }}</span>
+            </button>
+
+            <button class="comment-action reply-trigger-btn"
+                    data-comment-id="{{ reply.id }}"
+                    data-username="{{ reply.user.username }}"
+                    data-top-id="{{ top_comment.id }}">
+                <i class="far fa-comment"></i> Reply
+            </button>
+
+            {% if user == reply.user or user.is_staff %}
+            <button class="comment-action delete-comment-btn" data-comment-id="{{ reply.id }}">
+                <i class="far fa-trash-alt"></i> Delete
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Reply form for replying to this reply (nested visually but flat in DB) -->
+        <div class="reply-form" id="reply-form-{{ reply.id }}" style="display: none;">
+            <textarea class="comment-input reply-input" placeholder="Reply to {{ reply.user.username }}…" rows="2" maxlength="1000"></textarea>
+            <div class="reply-form-actions">
+                <button type="button" class="btn btn-ghost btn-sm cancel-reply-btn" data-comment-id="{{ reply.id }}">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm submit-reply-btn"
+                        data-comment-id="{{ reply.id }}"
+                        data-top-id="{{ top_comment.id }}">
+                    <i class="fas fa-paper-plane"></i> Reply
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

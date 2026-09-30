@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% block sidebar_menu %}
+    {% include 'includes/_admin_left_sidebar.html' %}
+{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-gauge"></i> Admin</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:admin_dashboard' %}" class="side-link active">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{% url 'core:admin_posts' %}" class="side-link">
+                    <i class="fas fa-file-alt"></i> Manage Posts
+                </a>
+                <a href="{% url 'core:admin_quick_fetch' %}" class="side-link">
+                    <i class="fas fa-bolt"></i> Quick Fetch
+                </a>
+                <a href="{% url 'core:admin_sources' %}" class="side-link">
+                    <i class="fas fa-globe"></i> Sources
+                </a>
+                <a href="{% url 'core:admin_ads' %}" class="side-link">
+                    <i class="fas fa-envelope"></i> Ads
+                </a>
+                <a href="{% url 'core:admin_subscribers' %}" class="side-link">
+                    <i class="fas fa-envelope"></i> Subscribers
+                </a>
+                <a href="{% url 'core:admin_settings' %}" class="side-link">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">Admin Dashboard</h1>
+            <p class="page-sub">Welcome back, {{ user.get_full_name|default:user.username }}</p>
+        </header>
+
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-card-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Total Posts</div>
+                    <div class="stat-card-value">{{ total_posts|default:0 }}</div>
+                    <div class="stat-card-hint"><i class="fas fa-arrow-up"></i> +{{ posts_today|default:0 }} today</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Total Users</div>
+                    <div class="stat-card-value">{{ total_users|default:0 }}</div>
+                    <div class="stat-card-hint"><i class="fas fa-arrow-up"></i> +{{ users_today|default:0 }} today</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">User Submissions</div>
+                    <div class="stat-card-value">{{ pending_user_news|default:0 }}</div>
+                    <div class="stat-card-hint" style="color: var(--warning);"><i class="fas fa-exclamation-triangle"></i> Needs review</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">AI Pending</div>
+                    <div class="stat-card-value">{{ pending_ai_news|default:0 }}</div>
+                    <div class="stat-card-hint" style="color: var(--warning);"><i class="fas fa-clock"></i> Awaiting AI</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon" style="background: linear-gradient(135deg, #10b981, #047857);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Verified</div>
+                    <div class="stat-card-value">{{ verified_posts|default:0 }}</div>
+                    <div class="stat-card-hint"><i class="fas fa-percent"></i> {{ verified_percent|default:0 }}% of total</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Fake News</div>
+                    <div class="stat-card-value">{{ fake_posts|default:0 }}</div>
+                    <div class="stat-card-hint" style="color: var(--danger);"><i class="fas fa-percent"></i> {{ fake_percent|default:0 }}% of total</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin: 20px 0 14px;">
+            <div class="card-head"><i class="fas fa-bolt"></i> Quick Actions</div>
+            <div class="card-body">
+                <div class="quick-actions">
+                    <a href="{% url 'core:admin_posts' %}?filter=pending" class="quick-action-btn">
+                        <i class="fas fa-clock"></i>
+                        <span>Pending Posts</span>
+                        {% if pending_news %}<span class="quick-badge">{{ pending_news }}</span>{% endif %}
+                    </a>
+                    <a href="{% url 'core:admin_posts' %}?filter=user_news" class="quick-action-btn">
+                        <i class="fas fa-user"></i>
+                        <span>User News</span>
+                    </a>
+                    <a href="{% url 'core:admin_posts' %}?filter=auto_news" class="quick-action-btn">
+                        <i class="fas fa-robot"></i>
+                        <span>Auto News</span>
+                    </a>
+                    <a href="{% url 'core:admin_quick_fetch' %}" class="quick-action-btn">
+                        <i class="fas fa-cloud-download-alt"></i>
+                        <span>Quick Fetch</span>
+                    </a>
+                    <a href="{% url 'core:admin_posts' %}" class="quick-action-btn">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Manage Posts</span>
+                    </a>
+                    <a href="{% url 'core:admin_sources' %}" class="side-link">
+                        <i class="fas fa-globe"></i> Sources
+                    </a>
+                    <a href="{% url 'core:admin_subscribers' %}" class="side-link">
+                        <i class="fas fa-envelope"></i> Subscribers
+                    </a>
+                    <a href="{% url 'core:admin_settings' %}" class="quick-action-btn">
+                        <i class="fas fa-cog"></i>
+                        <span>System Settings</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-grid-2">
+            <div class="card">
+                <div class="card-head">
+                    <i class="fas fa-user-clock"></i> Pending User Submissions
+                    {% if pending_user_news %}<span class="quick-badge" style="margin-left: auto;">{{ pending_user_news }}</span>{% endif %}
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    {% if pending_submissions %}
+                    <div class="pending-list">
+                        {% for post in pending_submissions %}
+                        <a href="{% url 'core:admin_posts' %}?filter=pending" class="pending-row">
+                            <div class="pending-info">
+                                <div class="pending-title truncate">{{ post.title|truncatechars:50 }}</div>
+                                <div class="pending-meta">
+                                    <span><i class="fas fa-user"></i> {{ post.author.username }}</span>
+                                    <span><i class="far fa-clock"></i> {{ post.created_at|timesince }} ago</span>
+                                </div>
+                            </div>
+                            {% if post.verification_score %}
+                            <span class="score-badge {% if post.verification_score >= 0.7 %}high{% elif post.verification_score >= 0.5 %}medium{% else %}low{% endif %}">
+                                {{ post.verification_score|floatformat:2 }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <div style="padding: 12px 14px; border-top: 1px solid var(--border);">
+                        <a href="{% url 'core:admin_posts' %}?filter=pending" class="btn btn-outline btn-sm btn-block">
+                            Review all <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div style="padding: 30px; text-align: center;">
+                        <i class="fas fa-check-circle" style="font-size: 32px; color: var(--success); margin-bottom: 10px;"></i>
+                        <p style="font-size: 13px; color: var(--text-3);">No pending submissions</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <i class="fas fa-robot"></i> Pending AI Verification
+                    {% if pending_ai_news %}<span class="quick-badge" style="margin-left: auto;">{{ pending_ai_news }}</span>{% endif %}
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    {% if pending_ai_submissions %}
+                    <div class="pending-list">
+                        {% for post in pending_ai_submissions %}
+                        <a href="{% url 'core:admin_posts' %}?filter=pending" class="pending-row">
+                            <div class="pending-info">
+                                <div class="pending-title truncate">{{ post.title|truncatechars:50 }}</div>
+                                <div class="pending-meta">
+                                    {% if post.external_source %}
+                                    <span><i class="fas fa-globe"></i> {{ post.external_source|truncatechars:20 }}</span>
+                                    {% endif %}
+                                    <span><i class="far fa-clock"></i> {{ post.created_at|timesince }} ago</span>
+                                </div>
+                            </div>
+                            {% if post.verification_score %}
+                            <span class="score-badge {% if post.verification_score >= 0.7 %}high{% elif post.verification_score >= 0.5 %}medium{% else %}low{% endif %}">
+                                {{ post.verification_score|floatformat:2 }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <div style="padding: 12px 14px; border-top: 1px solid var(--border);">
+                        <a href="{% url 'core:admin_posts' %}?filter=pending" class="btn btn-primary btn-sm btn-block">
+                            Verify with AI <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div style="padding: 30px; text-align: center;">
+                        <i class="fas fa-check-circle" style="font-size: 32px; color: var(--success); margin-bottom: 10px;"></i>
+                        <p style="font-size: 13px; color: var(--text-3);">All caught up</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 14px;">
+            <div class="card-head"><i class="fas fa-history"></i> Recent Activity</div>
+            <div class="card-body" style="padding: 0;">
+                {% if recent_activities %}
+                <div class="activity-compact">
+                    {% for act in recent_activities %}
+                    <div class="activity-compact-row">
+                        <div class="activity-compact-icon">
+                            {% if act.activity_type == 'post_created' %}
+                            <i class="fas fa-pen-to-square" style="color: var(--brand);"></i>
+                            {% elif act.activity_type == 'post_liked' %}
+                            <i class="fas fa-heart" style="color: var(--danger);"></i>
+                            {% elif act.activity_type == 'comment_created' %}
+                            <i class="fas fa-comment" style="color: var(--success);"></i>
+                            {% elif act.activity_type == 'followed_user' %}
+                            <i class="fas fa-user-plus" style="color: var(--brand);"></i>
+                            {% else %}
+                            <i class="fas fa-circle" style="font-size: 8px; color: var(--text-3);"></i>
+                            {% endif %}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="activity-compact-text truncate">
+                                <strong>{{ act.user.username }}</strong>
+                                {% if act.activity_type == 'post_created' %} created a post
+                                {% elif act.activity_type == 'post_liked' %} liked a post
+                                {% elif act.activity_type == 'comment_created' %} commented
+                                {% elif act.activity_type == 'followed_user' %} followed someone
+                                {% else %} {{ act.get_activity_type_display|lower }}
+                                {% endif %}
+                            </div>
+                            <div class="activity-compact-time">{{ act.created_at|timesince }} ago</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="padding: 30px; text-align: center;">
+                    <p style="font-size: 13px; color: var(--text-3);">No recent activity</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 14px;">
+            <div class="card-head"><i class="fas fa-users"></i> Recent Users</div>
+            <div class="card-body" style="padding: 0;">
+                {% if recent_users %}
+                <div class="recent-users-list">
+                    {% for u in recent_users %}
+                    <a href="{% url 'accounts:profile' u.username %}" class="recent-user-row">
+                        <div class="recent-user-avatar">
+                            {% if u.profile.profile_pic %}
+                            <img src="{{ u.profile.profile_pic.url }}" alt="{{ u.username }}">
+                            {% else %}
+                            {{ u.username|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="recent-user-name truncate">{{ u.get_full_name|default:u.username }}</div>
+                            <div class="recent-user-meta">@{{ u.username }} · joined {{ u.date_joined|date:"M d, Y" }}</div>
+                        </div>
+                        <span class="role-badge">{{ u.profile.account_type|default:"individual"|title }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="padding: 30px; text-align: center;">
+                    <p style="font-size: 13px; color: var(--text-3);">No users yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-info-circle"></i> System</div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-2);">
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">Posts today:</strong> {{ posts_today|default:0 }}</p>
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">Users today:</strong> {{ users_today|default:0 }}</p>
+                <p style="margin: 0;"><strong style="color: var(--text);">Fetched today:</strong> {{ auto_fetched_today|default:0 }}</p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.stat-card { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px; transition: all .15s; }
+.stat-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-card-icon { width: 44px; height: 44px; border-radius: var(--r); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; flex-shrink: 0; }
+.stat-card-body { flex: 1; min-width: 0; }
+.stat-card-label { font-size: 11.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; margin-bottom: 2px; }
+.stat-card-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.stat-card-hint { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.quick-action-btn { display: flex; align-items: center; gap: 10px; padding: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r); color: var(--text); font-size: 13.5px; font-weight: 600; text-decoration: none; transition: all .15s; }
+.quick-action-btn:hover { background: var(--surface); border-color: var(--brand); color: var(--brand); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.quick-action-btn i { font-size: 16px; color: var(--brand); width: 20px; text-align: center; }
+.quick-badge { margin-left: auto; font-size: 10.5px; background: var(--warning); color: #fff; padding: 2px 8px; border-radius: var(--r-full); font-weight: 700; }
+
+.admin-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .admin-grid-2 { grid-template-columns: 1fr; } }
+
+.pending-list { display: flex; flex-direction: column; }
+.pending-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); text-decoration: none; color: inherit; transition: background .15s; }
+.pending-row:last-child { border-bottom: none; }
+.pending-row:hover { background: var(--surface-2); }
+.pending-info { flex: 1; min-width: 0; }
+.pending-title { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.pending-meta { display: flex; gap: 10px; font-size: 11px; color: var(--text-3); flex-wrap: wrap; }
+.score-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: var(--r-full); flex-shrink: 0; }
+.score-badge.high { background: var(--success-bg); color: var(--success-text); }
+.score-badge.medium { background: var(--warning-bg); color: var(--warning-text); }
+.score-badge.low { background: var(--danger-bg); color: var(--danger-text); }
+
+.activity-compact { display: flex; flex-direction: column; }
+.activity-compact-row { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); align-items: center; }
+.activity-compact-row:last-child { border-bottom: none; }
+.activity-compact-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.activity-compact-text { font-size: 12.5px; color: var(--text-2); }
+.activity-compact-text strong { color: var(--text); font-weight: 600; }
+.activity-compact-time { font-size: 10.5px; color: var(--text-3); margin-top: 1px; }
+
+.recent-users-list { display: flex; flex-direction: column; }
+.recent-user-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); text-decoration: none; color: inherit; transition: background .15s; }
+.recent-user-row:last-child { border-bottom: none; }
+.recent-user-row:hover { background: var(--surface-2); }
+.recent-user-avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 15px; }
+.recent-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.recent-user-name { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
+.recent-user-meta { font-size: 11px; color: var(--text-3); }
+.role-badge { font-size: 10.5px; font-weight: 600; padding: 3px 9px; background: var(--brand-soft); color: var(--brand-dark); border-radius: var(--r-full); text-transform: uppercase; letter-spacing: .04em; }
+</style>
+{% endblock %}

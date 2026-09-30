@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+{% block title %}Create Post{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <!-- LEFT -->
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+                <a href="{% url 'accounts:profile' user.username %}" class="side-link">
+                    <i class="fas fa-user"></i> My Profile
+                </a>
+                <a href="{% url 'socialapp:create_post' %}" class="side-link active">
+                    <i class="fas fa-pen"></i> Create Post
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><i class="fas fa-lightbulb"></i> Guidelines</div>
+            <div class="card-body" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;">
+                <p style="margin-bottom: 8px;">✓ Be respectful</p>
+                <p style="margin-bottom: 8px;">✓ Verify news sources</p>
+                <p style="margin-bottom: 8px;">✓ No spam or harassment</p>
+                <p style="margin-bottom: 0;">✓ News posts are AI-verified</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- CENTER -->
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">Create Post</h1>
+            <p class="page-sub">Share your thoughts, news, or updates</p>
+        </header>
+
+        <!-- Post type selector -->
+        <div class="type-selector">
+            <a href="?type=discussion"
+               class="type-card {% if post_type == 'discussion' %}active{% endif %}">
+                <div class="type-icon" style="background: linear-gradient(135deg, #dbeafe, #3b82f6);">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="type-info">
+                    <div class="type-name">Discussion</div>
+                    <div class="type-desc">Share what's on your mind</div>
+                </div>
+            </a>
+
+            <a href="?type=news"
+               class="type-card {% if post_type == 'news' %}active{% endif %}">
+                <div class="type-icon" style="background: linear-gradient(135deg, #dcfce7, #10b981);">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <div class="type-info">
+                    <div class="type-name">News</div>
+                    <div class="type-desc">Submit a news link (AI verifies)</div>
+                </div>
+            </a>
+
+            <a href="?type=profile"
+               class="type-card {% if post_type == 'profile' %}active{% endif %}">
+                <div class="type-icon" style="background: linear-gradient(135deg, #ede9fe, #8b5cf6);">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="type-info">
+                    <div class="type-name">Profile Post</div>
+                    <div class="type-desc">Visible only on your profile</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Form errors -->
+        {% if form.errors %}
+        <div class="alert alert-error" style="margin-bottom: 14px;">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+                <strong>Please fix the errors below</strong>
+                <ul style="margin: 6px 0 0 20px; font-size: 12.5px;">
+                {% for field, errors in form.errors.items %}
+                    {% for e in errors %}<li>{{ field }}: {{ e }}</li>{% endfor %}
+                {% endfor %}
+                {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Form -->
+        <form method="post" enctype="multipart/form-data" class="card">
+            {% csrf_token %}
+            <input type="hidden" name="post_type" value="{{ post_type }}">
+
+            <div class="card-body" style="padding: 20px;">
+
+                <!-- TITLE (not for profile post) -->
+                {% if post_type != 'profile' %}
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">
+                        {% if post_type == 'news' %}
+                        Headline <span style="color: var(--danger);">*</span>
+                        {% else %}
+                        Title <span style="color: var(--text-3);">(optional)</span>
+                        {% endif %}
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                    <p style="font-size: 11.5px; color: var(--danger); margin-top: 4px;">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- SOURCE URL (news only) -->
+                {% if post_type == 'news' %}
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">
+                        Source URL <span style="color: var(--danger);">*</span>
+                    </label>
+                    {{ form.source_url }}
+                    <p style="font-size: 11.5px; color: var(--text-3); margin-top: 4px;">
+                        <i class="fas fa-robot"></i> AI will verify this link before publishing.
+                    </p>
+                    {% if form.source_url.errors %}
+                    <p style="font-size: 11.5px; color: var(--danger); margin-top: 4px;">{{ form.source_url.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">Source name <span style="color: var(--text-3);">(optional)</span></label>
+                    {{ form.source_name }}
+                </div>
+                {% endif %}
+
+                <!-- CONTENT -->
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">
+                        {% if post_type == 'news' %}Summary / explanation{% else %}Content{% endif %}
+                        <span style="color: var(--danger);">*</span>
+                    </label>
+                    {{ form.content }}
+                    <p style="font-size: 11.5px; color: var(--text-3); margin-top: 4px; text-align: right;">
+                        <span id="contentCount">0</span> characters
+                    </p>
+                    {% if form.content.errors %}
+                    <p style="font-size: 11.5px; color: var(--danger); margin-top: 4px;">{{ form.content.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- CATEGORY (not for profile) -->
+                {% if post_type != 'profile' %}
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">
+                        Category
+                        {% if post_type == 'news' %}<span style="color: var(--danger);">*</span>{% endif %}
+                    </label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                    <p style="font-size: 11.5px; color: var(--danger); margin-top: 4px;">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- IMAGE (all types) -->
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">Image <span style="color: var(--text-3);">(optional)</span></label>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div id="imagePreview" style="width: 80px; height: 80px; border-radius: var(--r); overflow: hidden; background: var(--surface-2); border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; color: var(--text-3); flex-shrink: 0;">
+                            <i class="fas fa-image" style="font-size: 20px;"></i>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <label for="{{ form.image.id_for_label }}" class="btn btn-outline btn-sm" style="cursor: pointer;">
+                                <i class="fas fa-upload"></i> Choose image
+                            </label>
+                            {{ form.image }}
+                            <p style="font-size: 11px; color: var(--text-3); margin-top: 4px;">JPG, PNG · max 5MB</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ACTIONS -->
+            <div style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="{% url 'core:home' %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                    {% if post_type == 'news' %}Submit for verification{% else %}Publish{% endif %}
+                </button>
+            </div>
+        </form>
+
+    </main>
+
+    <!-- RIGHT -->
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-info-circle"></i> About this post</div>
+            <div class="card-body" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;">
+                {% if post_type == 'news' %}
+                <p style="margin-bottom: 8px;">
+                    <strong style="color: var(--text);">AI will verify your link</strong>
+                </p>
+                <p style="margin-bottom: 8px;">
+                    • High credibility → auto-published<br>
+                    • Medium → admin reviews<br>
+                    • Low → auto-rejected
+                </p>
+                <p style="margin: 0; color: var(--text-3);">You'll be notified of the outcome.</p>
+                {% elif post_type == 'profile' %}
+                <p style="margin: 0;">This post only appears on your profile — nobody else will see it in the main feed.</p>
+                {% else %}
+                <p style="margin: 0;">Your discussion will appear in the home feed for everyone to see and interact with.</p>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.type-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 18px 12px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--r-lg);
+    color: var(--text-2);
+    transition: all .15s;
+    text-decoration: none;
+}
+.type-card:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+.type-card.active {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+    color: var(--text);
+}
+.type-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--r);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px;
+}
+.type-name {
+    font-size: 14px; font-weight: 700; color: var(--text);
+}
+.type-desc {
+    font-size: 11.5px; color: var(--text-3); line-height: 1.35;
+}
+
+@media (max-width: 820px) {
+    .type-selector { grid-template-columns: 1fr; }
+    .type-card {
+        flex-direction: row;
+        text-align: left;
+        padding: 14px;
+    }
+    .type-info { flex: 1; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Character counter
+    const contentField = document.getElementById('{{ form.content.id_for_label }}');
+    const contentCount = document.getElementById('contentCount');
+    if (contentField && contentCount) {
+        const update = () => { contentCount.textContent = contentField.value.length; };
+        contentField.addEventListener('input', update);
+        update();
+    }
+
+    // Image preview
+    const imageInput = document.getElementById('{{ form.image.id_for_label }}');
+    const imagePreview = document.getElementById('imagePreview');
+    if (imageInput && imagePreview) {
+        imageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+                imagePreview.style.border = '1px solid var(--border)';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% block title %}Saved Posts{% endblock %}
+
+{% block sidebar_menu %}
+    <div class="drawer-section">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+                <a href="{% url 'news:online_news' %}" class="side-link">
+                    <i class="fas fa-newspaper"></i> News
+                </a>
+                <a href="{% url 'accounts:profile' user.username %}" class="side-link">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="{% url 'socialapp:saved_posts' %}" class="side-link active">
+                    <i class="fas fa-bookmark"></i> Saved
+                    {% if counts.all %}<span class="count">{{ counts.all }}</span>{% endif %}
+                </a>
+                <a href="{% url 'socialapp:notifications' %}" class="side-link">
+                    <i class="fas fa-bell"></i> Notifications
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'core:home' %}" class="side-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+                <a href="{% url 'news:online_news' %}" class="side-link">
+                    <i class="fas fa-newspaper"></i> News
+                </a>
+                <a href="{% url 'accounts:profile' user.username %}" class="side-link">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="{% url 'socialapp:saved_posts' %}" class="side-link active">
+                    <i class="fas fa-bookmark"></i> Saved
+                    {% if counts.all %}<span class="count">{{ counts.all }}</span>{% endif %}
+                </a>
+                <a href="{% url 'socialapp:notifications' %}" class="side-link">
+                    <i class="fas fa-bell"></i> Notifications
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">Saved Posts</h1>
+            <p class="page-sub">
+                {% if counts.all %}
+                {{ counts.all }} post{{ counts.all|pluralize }} saved
+                {% else %}
+                Your bookmarked posts appear here
+                {% endif %}
+            </p>
+        </header>
+
+        <div class="view-tabs" style="margin-bottom: 14px;">
+            <a href="?filter=all" class="view-tab {% if filter_type == 'all' %}active{% endif %}">
+                All
+                {% if counts.all %}<span class="tab-count">{{ counts.all }}</span>{% endif %}
+            </a>
+            <a href="?filter=news" class="view-tab {% if filter_type == 'news' %}active{% endif %}">
+                News
+                {% if counts.news %}<span class="tab-count">{{ counts.news }}</span>{% endif %}
+            </a>
+            <a href="?filter=discussions" class="view-tab {% if filter_type == 'discussions' %}active{% endif %}">
+                Discussions
+                {% if counts.discussions %}<span class="tab-count">{{ counts.discussions }}</span>{% endif %}
+            </a>
+            <a href="?filter=profile" class="view-tab {% if filter_type == 'profile' %}active{% endif %}">
+                Profile posts
+                {% if counts.profile %}<span class="tab-count">{{ counts.profile }}</span>{% endif %}
+            </a>
+        </div>
+
+        {% if posts %}
+            {% for post in posts %}
+            <article class="card saved-post-card" style="margin-bottom: 14px;" data-post-id="{{ post.id }}">
+                <div class="card-body">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <a href="{% url 'accounts:profile' post.author.username %}" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 15px;">
+                            {% if post.author.profile.profile_pic %}
+                            <img src="{{ post.author.profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            {{ post.author.username|first|upper }}
+                            {% endif %}
+                        </a>
+                        <div style="flex: 1; min-width: 0;">
+                            <a href="{% url 'accounts:profile' post.author.username %}" class="truncate" style="font-size: 13.5px; font-weight: 600; color: var(--text); display: block;">
+                                {{ post.author.get_full_name|default:post.author.username }}
+                            </a>
+                            <span style="font-size: 11.5px; color: var(--text-3);">
+                                @{{ post.author.username }} · {{ post.published_at|timesince }} ago
+                                {% if post.category %} · {{ post.category.name }}{% endif %}
+                            </span>
+                        </div>
+
+                        <button class="btn-icon-remove remove-saved-btn"
+                                data-post-id="{{ post.id }}"
+                                title="Remove from saved">
+                            <i class="fas fa-bookmark"></i>
+                        </button>
+                    </div>
+
+                    <a href="{% url 'news:post_detail' post.id %}" style="display: block; color: inherit;">
+                        {% if post.title %}
+                        <h3 style="font-size: 15.5px; font-weight: 700; margin-bottom: 6px; line-height: 1.35;">{{ post.title }}</h3>
+                        {% endif %}
+                        <p style="font-size: 13.5px; color: var(--text-2); line-height: 1.55; margin-bottom: 10px;">
+                            {{ post.content|truncatechars:220 }}
+                        </p>
+                    </a>
+
+                    {% if post.image or post.image_url %}
+                    <a href="{% url 'news:post_detail' post.id %}" style="display: block; border-radius: var(--r); overflow: hidden; margin-bottom: 12px;">
+                        {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="" style="width: 100%; max-height: 400px; object-fit: cover;">
+                        {% else %}
+                        <img src="{{ post.image_url }}" alt="" style="width: 100%; max-height: 400px; object-fit: cover;" onerror="this.parentElement.style.display='none'">
+                        {% endif %}
+                    </a>
+                    {% endif %}
+
+                    <div style="display: flex; gap: 18px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-3);">
+                        <span><i class="far fa-heart"></i> {{ post.likes.count }}</span>
+                        <span><i class="far fa-comment"></i> {{ post.comments_count }}</span>
+                        <span><i class="far fa-bookmark"></i> {{ post.bookmarks.count }}</span>
+                        <span><i class="far fa-share-square"></i> {{ post.shares|default:0 }}</span>
+                        <span style="margin-left: auto;"><i class="far fa-eye"></i> {{ post.views }}</span>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+
+            {% if page_obj.has_other_pages %}
+            <div class="pager">
+                {% if page_obj.has_previous %}
+                <a href="?filter={{ filter_type }}&page={{ page_obj.previous_page_number }}" class="btn btn-outline">
+                    <i class="fas fa-chevron-left"></i> Prev
+                </a>
+                {% endif %}
+                <span class="btn btn-outline" style="cursor:default;">
+                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                </span>
+                {% if page_obj.has_next %}
+                <a href="?filter={{ filter_type }}&page={{ page_obj.next_page_number }}" class="btn btn-outline">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        {% else %}
+            <div class="card empty-card">
+                <i class="fas fa-bookmark"></i>
+                <h3>
+                    {% if filter_type == 'all' %}
+                    No saved posts yet
+                    {% else %}
+                    No {{ filter_type }} saved
+                    {% endif %}
+                </h3>
+                <p>
+                    {% if filter_type == 'all' %}
+                    Tap the bookmark icon on any post to save it here for later.
+                    {% else %}
+                    You haven't saved any posts in this category.
+                    {% endif %}
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap;">
+                    <a href="{% url 'news:online_news' %}" class="btn btn-primary">
+                        <i class="fas fa-newspaper"></i> Browse News
+                    </a>
+                    <a href="{% url 'core:home' %}" class="btn btn-outline">
+                        <i class="fas fa-house"></i> Home Feed
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> About Saved</div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-2); line-height: 1.6;">
+                <p style="margin-bottom: 10px;">
+                    Posts you bookmark appear here. Only you can see your saved posts.
+                </p>
+                <p style="margin: 0; color: var(--text-3); font-size: 12px;">
+                    Tap the bookmark icon again on any post to remove it.
+                </p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<nav class="mobile-nav">
+    <a href="{% url 'core:home' %}"><i class="fas fa-house"></i><span>Home</span></a>
+    <a href="{% url 'news:online_news' %}"><i class="fas fa-newspaper"></i><span>News</span></a>
+    <a href="{% url 'socialapp:saved_posts' %}" class="active"><i class="fas fa-bookmark"></i><span>Saved</span></a>
+    <a href="{% url 'accounts:profile' user.username %}"><i class="fas fa-user"></i><span>Profile</span></a>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-icon-remove {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: var(--warning-bg);
+    color: var(--warning);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.btn-icon-remove:hover { background: var(--danger-bg); color: var(--danger); }
+.btn-icon-remove.processing { opacity: .5; pointer-events: none; }
+
+.view-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.view-tabs::-webkit-scrollbar { display: none; }
+.view-tab {
+    padding: 8px 14px;
+    border-radius: var(--r-full);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.view-tab:hover { border-color: var(--border-strong); color: var(--text); }
+.view-tab.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.view-tab .tab-count {
+    font-size: 10.5px;
+    background: rgba(0,0,0,.08);
+    color: inherit;
+    padding: 1px 6px;
+    border-radius: var(--r-full);
+    font-weight: 700;
+}
+.view-tab.active .tab-count { background: rgba(255,255,255,.25); }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    document.querySelectorAll('.remove-saved-btn').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const postId = this.dataset.postId;
+            const card = this.closest('.saved-post-card');
+            this.classList.add('processing');
+
+            try {
+                const res = await fetch(`/social/post/${postId}/bookmark/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json();
+
+                if (data.success && !data.bookmarked) {
+                    card.style.transition = 'opacity .3s ease, transform .3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        card.remove();
+                        if (!document.querySelector('.saved-post-card')) {
+                            window.location.reload();
+                        }
+                    }, 300);
+                }
+            } catch (err) {
+                console.error(err);
+                this.classList.remove('processing');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

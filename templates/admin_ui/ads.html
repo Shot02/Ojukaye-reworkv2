@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% block title %}Advertisements{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-gauge"></i> Admin</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:admin_dashboard' %}" class="side-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="{% url 'core:admin_posts' %}" class="side-link"><i class="fas fa-file-alt"></i> Manage Posts</a>
+                <a href="{% url 'core:admin_quick_fetch' %}" class="side-link"><i class="fas fa-bolt"></i> Quick Fetch</a>
+                <a href="{% url 'core:admin_sources' %}" class="side-link"><i class="fas fa-globe"></i> Sources</a>
+                <a href="{% url 'core:admin_ads' %}" class="side-link active"><i class="fas fa-bullhorn"></i> Ads</a>
+                <a href="{% url 'core:admin_subscribers' %}" class="side-link"><i class="fas fa-envelope"></i> Subscribers</a>
+                <a href="{% url 'core:admin_settings' %}" class="side-link"><i class="fas fa-cog"></i> Settings</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h1 class="page-title">Advertisements</h1>
+                <p class="page-sub">Manage banner, sidebar, and in-feed ads</p>
+            </div>
+            <button id="addAdBtn" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> New ad
+            </button>
+        </header>
+
+        <div class="mini-stats">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats.total }}</div>
+                <div class="mini-stat-label">Total</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value" style="color: var(--success);">{{ stats.active }}</div>
+                <div class="mini-stat-label">Active</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value" style="color: var(--warning);">{{ stats.pending }}</div>
+                <div class="mini-stat-label">Pending</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ total_impressions }}</div>
+                <div class="mini-stat-label">Impressions</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ total_clicks }}</div>
+                <div class="mini-stat-label">Clicks</div>
+            </div>
+        </div>
+
+        <div class="filters-bar">
+            <a href="{% url 'core:admin_ads' %}" class="filter-tab {% if not filter_type and not filter_status %}active{% endif %}">All</a>
+            <a href="?type=banner" class="filter-tab {% if filter_type == 'banner' %}active{% endif %}">Banner</a>
+            <a href="?type=sidebar" class="filter-tab {% if filter_type == 'sidebar' %}active{% endif %}">Sidebar</a>
+            <a href="?type=in_feed" class="filter-tab {% if filter_type == 'in_feed' %}active{% endif %}">In-Feed</a>
+            <a href="?status=active" class="filter-tab {% if filter_status == 'active' %}active{% endif %}">Active</a>
+        </div>
+
+        <div class="card">
+            <table class="ads-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;"></th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Impressions</th>
+                        <th>Clicks</th>
+                        <th>CTR</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ad in ads %}
+                    <tr data-ad-id="{{ ad.id }}">
+                        <td>
+                            {% if ad.image %}
+                            <img src="{{ ad.image.url }}" alt="" style="width: 48px; height: 32px; object-fit: cover; border-radius: 4px;">
+                            {% elif ad.image_url %}
+                            <img src="{{ ad.image_url }}" alt="" style="width: 48px; height: 32px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'">
+                            {% else %}
+                            <div style="width: 48px; height: 32px; background: var(--surface-2); border-radius: 4px;"></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'core:admin_ad_detail' ad.id %}" style="font-weight: 600; color: var(--text); text-decoration: none;">
+                                {{ ad.title|truncatechars:50 }}
+                            </a>
+                            {% if not ad.business %}
+                            <span class="badge-pill house" style="margin-left: 6px;">House</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="table-badge">{{ ad.get_ad_type_display }}</span></td>
+                        <td>
+                            {% if ad.is_active and ad.status == 'active' %}
+                            <span class="status-pill working">Active</span>
+                            {% elif ad.status == 'pending' %}
+                            <span class="status-pill slow">Pending</span>
+                            {% elif ad.status == 'rejected' %}
+                            <span class="status-pill broken">Rejected</span>
+                            {% else %}
+                            <span class="status-pill unknown">{{ ad.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ ad.total_impressions }}</td>
+                        <td>{{ ad.total_clicks }}</td>
+                        <td>{{ ad.ctr_display }}%</td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{% url 'core:admin_ad_detail' ad.id %}" class="btn-icon" title="View details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn-icon toggle-ad-btn {% if ad.is_active %}active{% endif %}" data-ad-id="{{ ad.id }}" title="Toggle active">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                                <button class="btn-icon delete-ad-btn" data-ad-id="{{ ad.id }}" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="padding: 40px; text-align: center;">
+                            <i class="fas fa-bullhorn" style="font-size: 32px; color: var(--text-3); margin-bottom: 8px;"></i>
+                            <p style="color: var(--text-3); margin-bottom: 12px;">No ads yet</p>
+                            <button id="addAdBtn2" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i> Create your first ad
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-info-circle"></i> About ads</div>
+            <div class="card-body" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;">
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">Banner:</strong> shows in the news page slider.</p>
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">Sidebar:</strong> shows in the right column of news.</p>
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">In-Feed:</strong> between feed items.</p>
+                <p style="margin: 0;"><strong style="color: var(--text);">House:</strong> ads you created directly (no business account).</p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.mini-stats { display: flex; gap: 8px; margin-bottom: 14px; }
+.mini-stat { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; text-align: center; }
+.mini-stat-value { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.mini-stat-label { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.filters-bar { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-tab { padding: 6px 14px; border-radius: var(--r-full); font-size: 12.5px; font-weight: 600; color: var(--text-2); background: var(--surface); border: 1px solid var(--border); text-decoration: none; transition: all .15s; }
+.filter-tab:hover { border-color: var(--brand); color: var(--brand); }
+.filter-tab.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+.ads-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ads-table thead th { text-align: left; padding: 10px 12px; background: var(--surface-2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ads-table tbody td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text-2); vertical-align: middle; }
+.ads-table tbody tr:hover { background: var(--surface-2); }
+.ads-table tbody tr:last-child td { border-bottom: none; }
+
+.badge-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: var(--r-full); text-transform: uppercase; }
+.badge-pill.house { background: var(--brand-soft); color: var(--brand-dark); }
+
+.table-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; background: var(--surface-2); border-radius: var(--r-full); color: var(--text-2); white-space: nowrap; }
+
+.status-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: var(--r-full); white-space: nowrap; }
+.status-pill.working { background: var(--success-bg); color: var(--success-text); }
+.status-pill.broken { background: var(--danger-bg); color: var(--danger-text); }
+.status-pill.slow { background: var(--warning-bg); color: var(--warning-text); }
+.status-pill.unknown { background: var(--surface-2); color: var(--text-3); }
+
+.table-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.btn-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .15s; text-decoration: none; }
+.btn-icon:hover { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.btn-icon.toggle-ad-btn.active { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+.btn-icon.delete-ad-btn:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-icon.processing { opacity: .5; pointer-events: none; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    function post(url, data = {}) {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(data)) fd.append(k, v);
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+        }).then(r => r.json());
+    }
+
+    // ADD AD (modal form)
+    function openAddAdModal() {
+        showFormModal({
+            title: 'Create new ad',
+            description: 'Fill in the details. Banner and sidebar ads need an image.',
+            submitText: 'Create ad',
+            fields: [
+                { name: 'title', label: 'Title', placeholder: 'Summer sale', required: true },
+                { name: 'ad_type', label: 'Ad type', type: 'select', options: [
+                    { value: 'banner', label: 'Banner (news slider)' },
+                    { value: 'sidebar', label: 'Sidebar (right column)' },
+                    { value: 'in_feed', label: 'In-Feed (between posts)' },
+                ], required: true },
+                { name: 'target_url', label: 'Target URL', placeholder: 'https://example.com', required: true },
+                { name: 'image_url', label: 'Image URL (or upload below)', placeholder: 'https://example.com/banner.jpg' },
+                { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Short ad copy' },
+            ]
+        }).then(data => {
+            if (!data) return;
+            post('{% url "core:admin_ad_create" %}', data).then(res => {
+                if (res.success) {
+                    showAlert('Ad created.', 'Success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showAlert(res.error || 'Failed', 'Error');
+                }
+            }).catch(() => showAlert('Something went wrong', 'Error'));
+        });
+    }
+
+    const addBtn = document.getElementById('addAdBtn');
+    if (addBtn) addBtn.addEventListener('click', openAddAdModal);
+
+    const addBtn2 = document.getElementById('addAdBtn2');
+    if (addBtn2) addBtn2.addEventListener('click', openAddAdModal);
+
+    // TOGGLE
+    document.querySelectorAll('.toggle-ad-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.adId;
+            this.classList.add('processing');
+            try {
+                const data = await post(`/manage/ads/${id}/toggle/`);
+                if (data.success) {
+                    this.classList.toggle('active', data.is_active);
+                    showAlert(data.is_active ? 'Ad activated.' : 'Ad paused.', 'Updated');
+                }
+            } catch (e) {}
+            finally { this.classList.remove('processing'); }
+        });
+    });
+
+    // DELETE
+    document.querySelectorAll('.delete-ad-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const ok = await showConfirm('Delete this ad permanently?',
+                { title: 'Delete ad', confirmText: 'Delete', danger: true });
+            if (!ok) return;
+
+            const id = this.dataset.adId;
+            this.classList.add('processing');
+            try {
+                const data = await post(`/manage/ads/${id}/delete/`);
+                if (data.success) window.location.reload();
+            } catch (e) {
+                showAlert('Something went wrong', 'Error');
+                this.classList.remove('processing');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

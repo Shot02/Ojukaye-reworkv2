@@ -1,0 +1,486 @@
+{% extends 'base.html' %}
+{% block title %}News Sources{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-gauge"></i> Admin</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:admin_dashboard' %}" class="side-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="{% url 'core:admin_posts' %}" class="side-link"><i class="fas fa-file-alt"></i> Manage Posts</a>
+                <a href="{% url 'core:admin_quick_fetch' %}" class="side-link"><i class="fas fa-bolt"></i> Quick Fetch</a>
+                <a href="{% url 'core:admin_sources' %}" class="side-link active"><i class="fas fa-globe"></i> Sources</a>
+                <a href="{% url 'core:admin_subscribers' %}" class="side-link"><i class="fas fa-envelope"></i> Subscribers</a>
+                <a href="{% url 'core:admin_settings' %}" class="side-link"><i class="fas fa-cog"></i> Settings</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h1 class="page-title">News Sources</h1>
+                <p class="page-sub">Manage RSS feeds the fetcher pulls from</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="addSourceBtn" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add source</button>
+                <button id="discoverBtn" class="btn btn-outline btn-sm"><i class="fas fa-search"></i> Discover</button>
+                <button id="testAllBtn" class="btn btn-outline btn-sm"><i class="fas fa-vial"></i> Test all</button>
+            </div>
+        </header>
+
+        <div class="mini-stats">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats.total }}</div>
+                <div class="mini-stat-label">Total</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value" style="color: var(--success);">{{ stats.working }}</div>
+                <div class="mini-stat-label">Working</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value" style="color: var(--danger);">{{ stats.broken }}</div>
+                <div class="mini-stat-label">Broken</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value" style="color: var(--warning);">{{ stats.untested }}</div>
+                <div class="mini-stat-label">Untested</div>
+            </div>
+        </div>
+
+        {% if not stats.total %}
+        <div class="card" style="margin-bottom: 14px;">
+            <div class="card-body" style="text-align: center; padding: 24px;">
+                <p style="font-size: 13.5px; color: var(--text-2); margin-bottom: 12px;">
+                    No sources yet. Seed the defaults to get started.
+                </p>
+                <button id="seedBtn" class="btn btn-primary btn-sm">
+                    <i class="fas fa-download"></i> Seed default sources
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <table class="sources-table">
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Name</th>
+                        <th style="width: 30%;">URL</th>
+                        <th style="width: 14%;">Status</th>
+                        <th style="width: 8%;">Articles</th>
+                        <th style="width: 10%;">Response</th>
+                        <th style="width: 20%; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sources %}
+                    <tr data-source-id="{{ s.id }}">
+                        <td>
+                            <div style="font-weight: 600; color: var(--text);">{{ s.name }}</div>
+                            {% if s.is_trusted %}<span class="badge-pill trusted" style="margin-left: 0; margin-top: 4px;">Trusted</span>{% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ s.url }}" target="_blank" class="source-url">{{ s.url|truncatechars:55 }}</a>
+                        </td>
+                        <td>
+                            <span class="status-pill status-{{ s.last_status }}">
+                                {% if s.last_status == 'working' %}✓ Working
+                                {% elif s.last_status == 'broken' %}✗ Broken
+                                {% elif s.last_status == 'slow' %}⚠ Slow
+                                {% else %}Not tested{% endif %}
+                            </span>
+                            {% if s.last_error %}
+                            <div class="status-error">{{ s.last_error|truncatechars:40 }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ s.last_article_count|default:"—" }}</td>
+                        <td class="table-date">{% if s.last_response_ms %}{{ s.last_response_ms }}ms{% else %}—{% endif %}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-icon test-source-btn" data-source-id="{{ s.id }}" title="Test source">
+                                    <i class="fas fa-vial"></i>
+                                </button>
+                                <button class="btn-icon toggle-source-btn {% if s.is_active %}active{% endif %}" data-source-id="{{ s.id }}" title="Toggle active">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                                <button class="btn-icon delete-source-btn" data-source-id="{{ s.id }}" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding: 40px; text-align: center;">
+                            <p style="color: var(--text-3);">No sources configured</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-info-circle"></i> How it works</div>
+            <div class="card-body" style="font-size: 12.5px; color: var(--text-2); line-height: 1.6;">
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">Add source:</strong> paste an RSS feed URL.</p>
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">Discover:</strong> paste a website URL → scanner finds its feed.</p>
+                <p style="margin-bottom: 8px;"><strong style="color: var(--text);">Test:</strong> check if the feed returns articles.</p>
+                <p style="margin: 0;"><strong style="color: var(--text);">Trusted:</strong> used by AI for higher verification scores.</p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.mini-stats { display: flex; gap: 8px; margin-bottom: 14px; }
+.mini-stat { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; text-align: center; }
+.mini-stat-value { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.mini-stat-label { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.sources-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+}
+.sources-table thead th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-3);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.sources-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2);
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.sources-table tbody tr:hover { background: var(--surface-2); }
+.sources-table tbody tr:last-child td { border-bottom: none; }
+
+.source-url {
+    color: var(--brand);
+    text-decoration: none;
+    font-size: 12px;
+    word-break: break-all;
+}
+.source-url:hover { text-decoration: underline; }
+
+.badge-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: var(--r-full);
+    text-transform: uppercase;
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+}
+
+.status-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: var(--r-full); white-space: nowrap; }
+.status-pill.status-working { background: var(--success-bg); color: var(--success-text); }
+.status-pill.status-broken { background: var(--danger-bg); color: var(--danger-text); }
+.status-pill.status-slow { background: var(--warning-bg); color: var(--warning-text); }
+.status-pill.status-unknown { background: var(--surface-2); color: var(--text-3); }
+.status-error { font-size: 10.5px; color: var(--danger); margin-top: 3px; }
+
+.table-date { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+
+.table-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+.btn-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all .15s;
+    flex-shrink: 0;
+}
+.btn-icon:hover { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.btn-icon.test-source-btn:hover { background: var(--brand); color: #fff; }
+.btn-icon.toggle-source-btn.active { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+.btn-icon.delete-source-btn:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-icon.processing { opacity: .5; pointer-events: none; }
+
+@media (max-width: 900px) {
+    .sources-table { font-size: 12px; }
+    .sources-table thead th, .sources-table tbody td { padding: 8px; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    function post(url, data = {}) {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(data)) fd.append(k, v);
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+        }).then(r => r.json());
+    }
+
+    // ADD SOURCE
+    const addBtn = document.getElementById('addSourceBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', async function() {
+            const data = await showFormModal({
+                title: 'Add news source',
+                description: 'Enter the source details. The URL should be an RSS feed.',
+                submitText: 'Add source',
+                fields: [
+                    { name: 'name', label: 'Source name', placeholder: 'BBC News', required: true },
+                    { name: 'url', label: 'RSS feed URL', placeholder: 'https://example.com/feed', required: true },
+                    { name: 'category_hint', label: 'Category (optional)', placeholder: 'general, tech, politics' },
+                    { name: 'country_hint', label: 'Country (optional)', placeholder: 'Nigeria, World' },
+                ]
+            });
+            if (!data) return;
+
+            try {
+                const res = await post('{% url "core:admin_source_add" %}', data);
+                if (res.success) {
+                    showAlert('Source added.', 'Success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showAlert(res.error || 'Failed to add source', 'Error');
+                }
+            } catch (e) {
+                showAlert('Something went wrong', 'Error');
+            }
+        });
+    }
+
+    // DISCOVER
+    const discoverBtn = document.getElementById('discoverBtn');
+    if (discoverBtn) {
+        discoverBtn.addEventListener('click', async function() {
+            const data = await showFormModal({
+                title: 'Discover RSS feeds',
+                description: 'Enter a website URL and we\'ll try to find its RSS feed.',
+                submitText: 'Discover',
+                fields: [
+                    { name: 'site_url', label: 'Website URL', placeholder: 'https://example.com', required: true },
+                ]
+            });
+            if (!data) return;
+
+            discoverBtn.disabled = true;
+            discoverBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const res = await post('{% url "core:admin_source_discover" %}', data);
+
+                if (res.success && res.candidates && res.candidates.length > 0) {
+                    let html = `<p style="margin-bottom: 12px; font-size: 13.5px; color: var(--text-2);">
+                        Found <strong>${res.candidates.length}</strong> candidate feed(s):</p>`;
+                    html += '<div style="max-height: 300px; overflow-y: auto;">';
+
+                    res.candidates.forEach((c, i) => {
+                        html += `
+                            <div class="discover-item" style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background:var(--surface-2);">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:12.5px; color:var(--text); word-break:break-all;">${c.url}</div>
+                                    ${c.title ? `<div style="font-size:11px; color:var(--text-3); margin-top:2px;">${c.title}</div>` : ''}
+                                </div>
+                                <button class="btn btn-primary btn-sm add-discovered-btn"
+                                        data-url="${c.url}"
+                                        data-title="${c.title || ''}">
+                                    Add
+                                </button>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+
+                    showHtmlModal({
+                        title: 'Discovered feeds',
+                        html: html,
+                        closeText: 'Done',
+                    });
+
+                    document.querySelectorAll('.add-discovered-btn').forEach(btn => {
+                        btn.addEventListener('click', async function() {
+                            const url = this.dataset.url;
+                            const title = this.dataset.title;
+                            this.disabled = true;
+                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                            let defaultName = title;
+                            if (!defaultName) {
+                                try { defaultName = new URL(url).hostname.replace('www.', ''); }
+                                catch(e) { defaultName = 'New source'; }
+                            }
+
+                            const nameData = await showFormModal({
+                                title: 'Add source',
+                                submitText: 'Add',
+                                fields: [
+                                    { name: 'name', label: 'Name', value: defaultName, required: true },
+                                    { name: 'url', label: 'URL', value: url, required: true },
+                                ]
+                            });
+                            if (!nameData) {
+                                this.disabled = false;
+                                this.innerHTML = 'Add';
+                                return;
+                            }
+
+                            try {
+                                const addRes = await post('{% url "core:admin_source_add" %}', nameData);
+                                if (addRes.success) {
+                                    this.innerHTML = '✓ Added';
+                                    this.classList.remove('btn-primary');
+                                    this.classList.add('btn-outline');
+                                } else {
+                                    showAlert(addRes.error || 'Failed', 'Error');
+                                    this.disabled = false;
+                                    this.innerHTML = 'Add';
+                                }
+                            } catch (e) {
+                                showAlert('Something went wrong', 'Error');
+                                this.disabled = false;
+                                this.innerHTML = 'Add';
+                            }
+                        });
+                    });
+
+                } else {
+                    showAlert('No RSS feeds found on that site.', 'No results');
+                }
+            } catch (e) {
+                showAlert('Something went wrong', 'Error');
+            } finally {
+                discoverBtn.disabled = false;
+                discoverBtn.innerHTML = '<i class="fas fa-search"></i> Discover';
+            }
+        });
+    }
+
+    // TEST ALL
+    const testAllBtn = document.getElementById('testAllBtn');
+    if (testAllBtn) {
+        testAllBtn.addEventListener('click', async function() {
+            const ok = await showConfirm('Test all sources? This may take a minute.',
+                { title: 'Test all sources', confirmText: 'Test' });
+            if (!ok) return;
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing…';
+
+            try {
+                const data = await post('{% url "core:admin_source_test_all" %}');
+                if (data.success) {
+                    showAlert(`Tested ${data.tested} sources: ${data.working} working, ${data.broken} broken.`, 'Done');
+                    setTimeout(() => window.location.reload(), 1200);
+                }
+            } catch (e) { showAlert('Something went wrong', 'Error'); }
+        });
+    }
+
+    // SEED DEFAULTS
+    const seedBtn = document.getElementById('seedBtn');
+    if (seedBtn) {
+        seedBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            try {
+                const data = await post('{% url "core:admin_source_seed_defaults" %}');
+                if (data.success) {
+                    showAlert(`Added ${data.added} sources (${data.skipped} already existed).`, 'Done');
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            } catch (e) { showAlert('Something went wrong', 'Error'); }
+        });
+    }
+
+    // TEST ONE
+    document.querySelectorAll('.test-source-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.sourceId;
+            this.classList.add('processing');
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            try {
+                const data = await post(`/manage/sources/${id}/test/`);
+                if (data.success) {
+                    showAlert(`✓ Working — ${data.count} articles (${data.response_ms}ms)`, 'Source tested');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showAlert(`✗ Broken — ${data.error}`, 'Source tested');
+                    setTimeout(() => window.location.reload(), 1200);
+                }
+            } catch (e) {
+                showAlert('Something went wrong', 'Error');
+                this.classList.remove('processing');
+                this.innerHTML = '<i class="fas fa-vial"></i>';
+            }
+        });
+    });
+
+    // TOGGLE
+    document.querySelectorAll('.toggle-source-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.sourceId;
+            this.classList.add('processing');
+            try {
+                const data = await post(`/manage/sources/${id}/toggle/`);
+                if (data.success) {
+                    this.classList.toggle('active', data.is_active);
+                }
+            } catch (e) {}
+            finally { this.classList.remove('processing'); }
+        });
+    });
+
+    // DELETE
+    document.querySelectorAll('.delete-source-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const ok = await showConfirm('Delete this source permanently?',
+                { title: 'Delete source', confirmText: 'Delete', danger: true });
+            if (!ok) return;
+
+            const id = this.dataset.sourceId;
+            this.classList.add('processing');
+            try {
+                const data = await post(`/manage/sources/${id}/delete/`);
+                if (data.success) window.location.reload();
+            } catch (e) {
+                showAlert('Something went wrong', 'Error');
+                this.classList.remove('processing');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

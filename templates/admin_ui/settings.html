@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block title %}System Settings{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-gauge"></i> Admin</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:admin_dashboard' %}" class="side-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="{% url 'core:admin_posts' %}" class="side-link"><i class="fas fa-file-alt"></i> Manage Posts</a>
+                <a href="{% url 'core:admin_quick_fetch' %}" class="side-link"><i class="fas fa-bolt"></i> Quick Fetch</a>
+                <a href="{% url 'core:admin_subscribers' %}" class="side-link"><i class="fas fa-envelope"></i> Subscribers</a>
+                <a href="{% url 'core:admin_sources' %}" class="side-link"><i class="fas fa-globe"></i> Sources</a>
+                <a href="{% url 'core:admin_settings' %}" class="side-link active"><i class="fas fa-cog"></i> Settings</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">System Settings</h1>
+            <p class="page-sub">Configure global system behavior and AI automation</p>
+        </header>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}" style="margin-bottom: 14px;">
+            {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+            {% elif message.tags == 'error' %}<i class="fas fa-exclamation-circle"></i>
+            {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if form.errors %}
+        <div class="alert alert-error" style="margin-bottom: 14px;">
+            <strong>Form errors:</strong>
+            <ul style="margin: 8px 0 0 20px; font-size: 13px;">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}<li><b>{{ field }}:</b> {{ error }}</li>{% endfor %}
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" class="settings-form">
+            {% csrf_token %}
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-robot"></i> AI & Verification</div>
+                <div class="card-body">
+                    <div class="settings-row">
+                        {{ form.auto_verify_news }}
+                        <div>
+                            <label class="settings-checkbox-label">Auto-verify news with AI</label>
+                            <p class="settings-help">Runs AI verification on every fetched and submitted article.</p>
+                        </div>
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Auto-approve threshold (0–1)</label>
+                        {{ form.auto_approve_threshold }}
+                        <p class="settings-help">Articles scoring above this get the "Verified" badge.</p>
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Min publish threshold (0–1)</label>
+                        {{ form.min_publish_threshold }}
+                        <p class="settings-help">Articles above this are published (without "Verified" badge).</p>
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Verification threshold (0–1)</label>
+                        {{ form.verification_threshold }}
+                    </div>
+                    <div class="settings-row">
+                        {{ form.auto_post_verified_news }}
+                        <div>
+                            <label class="settings-checkbox-label">Auto-publish verified news</label>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        {{ form.require_manual_review_for_fake }}
+                        <div>
+                            <label class="settings-checkbox-label">Require manual review for fake news</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-globe"></i> Source Reputation</div>
+                <div class="card-body">
+                    <div class="settings-field">
+                        <label class="field-label">Trusted sources (comma-separated)</label>
+                        {{ form.trusted_sources }}
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Blocked sources (comma-separated)</label>
+                        {{ form.blocked_sources }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-sync-alt"></i> News Fetching</div>
+                <div class="card-body">
+                    <div class="settings-row">
+                        {{ form.enable_auto_fetch }}
+                        <div><label class="settings-checkbox-label">Enable auto-fetch</label></div>
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Max articles per fetch</label>
+                        {{ form.max_news_per_fetch }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-file-alt"></i> Posts & Content</div>
+                <div class="card-body">
+                    <div class="settings-field">
+                        <label class="field-label">Max posts per day (per user)</label>
+                        {{ form.max_posts_per_day }}
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Max post length (characters)</label>
+                        {{ form.max_post_length }}
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Max image size (MB)</label>
+                        {{ form.max_image_size }}
+                    </div>
+                    <div class="settings-row">
+                        {{ form.require_post_approval }}
+                        <div><label class="settings-checkbox-label">Require approval for user posts</label></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-users"></i> Users</div>
+                <div class="card-body">
+                    <div class="settings-row">
+                        {{ form.allow_registrations }}
+                        <div><label class="settings-checkbox-label">Allow new registrations</label></div>
+                    </div>
+                    <div class="settings-row">
+                        {{ form.require_email_verification }}
+                        <div><label class="settings-checkbox-label">Require email verification</label></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-tools"></i> Maintenance</div>
+                <div class="card-body">
+                    <div class="settings-row">
+                        {{ form.maintenance_mode }}
+                        <div>
+                            <label class="settings-checkbox-label">Maintenance mode</label>
+                            <p class="settings-help">Blocks non-staff access to the site.</p>
+                        </div>
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Maintenance message</label>
+                        {{ form.maintenance_message }}
+                    </div>
+                    <div class="settings-row">
+                        {{ form.allow_admin_during_maintenance }}
+                        <div><label class="settings-checkbox-label">Allow admin access during maintenance</label></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head"><i class="fas fa-chart-line"></i> SEO</div>
+                <div class="card-body">
+                    <div class="settings-field">
+                        <label class="field-label">Meta description</label>
+                        {{ form.meta_description }}
+                    </div>
+                    <div class="settings-field">
+                        <label class="field-label">Meta keywords</label>
+                        {{ form.meta_keywords }}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; padding-bottom: 24px;">
+                <a href="{% url 'core:admin_dashboard' %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Save Settings
+                </button>
+            </div>
+        </form>
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-history"></i> Last updated</div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-2);">
+                {% if settings.updated_at %}
+                <p style="margin-bottom: 6px;">{{ settings.updated_at|date:"F d, Y · H:i" }}</p>
+                {% if settings.updated_by %}
+                <p style="margin: 0; font-size: 12px; color: var(--text-3);">by {{ settings.updated_by.username }}</p>
+                {% endif %}
+                {% else %}
+                <p style="margin: 0;">Never updated</p>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.settings-field { margin-bottom: 16px; }
+.settings-field:last-child { margin-bottom: 0; }
+.field-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+.settings-help { font-size: 11.5px; color: var(--text-3); margin-top: 4px; line-height: 1.5; }
+.settings-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+.settings-row:last-child { margin-bottom: 0; }
+.settings-checkbox-label { font-size: 13.5px; font-weight: 600; color: var(--text); display: block; cursor: pointer; line-height: 1.4; }
+.settings-checkbox { width: 18px; height: 18px; accent-color: var(--brand); cursor: pointer; margin-top: 2px; flex-shrink: 0; }
+.settings-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--r-sm); font-size: 13.5px; color: var(--text); outline: none; font-family: inherit; transition: all .15s; }
+.settings-input:focus { background: var(--surface); border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+textarea.settings-input { resize: vertical; min-height: 70px; }
+
+.alert { padding: 12px 16px; border-radius: var(--r); display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 500; }
+.alert-success { background: var(--success-bg); color: var(--success-text); }
+.alert-error { background: var(--danger-bg); color: var(--danger-text); }
+</style>
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% block title %}{% if query %}Search: {{ query }}{% else %}Search{% endif %}{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-filter"></i> Filter</div>
+            <div class="card-body flush">
+                <a href="?q={{ query|urlencode }}&type=all"
+                   class="side-link {% if filter_type == 'all' or not filter_type %}active{% endif %}">
+                    <i class="fas fa-globe"></i> All
+                    {% if results.counts.all %}<span class="count">{{ results.counts.all }}</span>{% endif %}
+                </a>
+                <a href="?q={{ query|urlencode }}&type=posts"
+                   class="side-link {% if filter_type == 'posts' %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i> Posts
+                    {% if results.counts.posts %}<span class="count">{{ results.counts.posts }}</span>{% endif %}
+                </a>
+                <a href="?q={{ query|urlencode }}&type=users"
+                   class="side-link {% if filter_type == 'users' %}active{% endif %}">
+                    <i class="fas fa-users"></i> Users
+                    {% if results.counts.users %}<span class="count">{{ results.counts.users }}</span>{% endif %}
+                </a>
+                <a href="?q={{ query|urlencode }}&type=categories"
+                   class="side-link {% if filter_type == 'categories' %}active{% endif %}">
+                    <i class="fas fa-hashtag"></i> Categories
+                    {% if results.counts.categories %}<span class="count">{{ results.counts.categories }}</span>{% endif %}
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">
+                {% if query %}
+                Results for "{{ query }}"
+                {% else %}
+                Search
+                {% endif %}
+            </h1>
+            <p class="page-sub">
+                {% if query %}
+                {{ results.counts.all }} result{{ results.counts.all|pluralize }}
+                {% else %}
+                Search for posts, people, and categories
+                {% endif %}
+            </p>
+        </header>
+
+        {% if not query %}
+        <div class="card empty-card">
+            <i class="fas fa-search"></i>
+            <h3>What are you looking for?</h3>
+            <p>Use the search bar above to find posts, users, or categories.</p>
+        </div>
+
+        {% elif query|length < 2 %}
+        <div class="card empty-card">
+            <i class="fas fa-info-circle"></i>
+            <h3>Search term too short</h3>
+            <p>Type at least 2 characters to search.</p>
+        </div>
+
+        {% elif results.counts.all == 0 %}
+        <div class="card empty-card">
+            <i class="fas fa-search-minus"></i>
+            <h3>No results for "{{ query }}"</h3>
+            <p>Try different keywords or check your spelling.</p>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap;">
+                <a href="{% url 'news:online_news' %}" class="btn btn-primary">
+                    <i class="fas fa-newspaper"></i> Browse News
+                </a>
+                <a href="{% url 'core:home' %}" class="btn btn-outline">
+                    <i class="fas fa-house"></i> Home Feed
+                </a>
+            </div>
+        </div>
+
+        {% else %}
+
+            <!-- USERS -->
+            {% if results.users %}
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head">
+                    <i class="fas fa-users"></i> Users ({{ results.counts.users }})
+                </div>
+                <div class="card-body flush">
+                    {% for u in results.users %}
+                    <a href="{% url 'accounts:profile' u.username %}" class="search-user-row">
+                        <div class="search-user-avatar">
+                            {% if u.profile.profile_pic %}
+                            <img src="{{ u.profile.profile_pic.url }}" alt="{{ u.username }}">
+                            {% else %}
+                            {{ u.username|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div class="search-user-info">
+                            <div class="search-user-name truncate">
+                                {{ u.highlighted_name|safe|default:u.get_full_name|default:u.username }}
+                            </div>
+                            <div class="search-user-handle truncate">@{{ u.highlighted_username|safe|default:u.username }}</div>
+                            {% if u.profile.bio %}
+                            <div class="search-user-bio truncate">{{ u.profile.bio|truncatechars:80 }}</div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- CATEGORIES -->
+            {% if results.categories %}
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head">
+                    <i class="fas fa-hashtag"></i> Categories ({{ results.counts.categories }})
+                </div>
+                <div class="card-body flush">
+                    {% for cat in results.categories %}
+                    <a href="{% url 'news:category' cat.slug %}" class="side-link">
+                        <i class="fas fa-hashtag"></i>
+                        {{ cat.highlighted_name|safe|default:cat.name }}
+                        <span class="count">{{ cat.post_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- POSTS -->
+            {% if results.posts %}
+            <div class="card-head" style="background: none; border: none; padding: 4px 4px 12px; font-size: 13px;">
+                <i class="fas fa-file-alt"></i> Posts ({{ results.counts.posts }})
+            </div>
+                {% for post in results.posts %}
+                <article class="card" style="margin-bottom: 14px;">
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <a href="{% url 'accounts:profile' post.author.username %}" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">
+                                {% if post.author.profile.profile_pic %}
+                                <img src="{{ post.author.profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                {{ post.author.username|first|upper }}
+                                {% endif %}
+                            </a>
+                            <div style="flex: 1; min-width: 0;">
+                                <a href="{% url 'accounts:profile' post.author.username %}" class="truncate" style="font-size: 13px; font-weight: 600; color: var(--text); display: block;">
+                                    {{ post.author.get_full_name|default:post.author.username }}
+                                </a>
+                                <span style="font-size: 11px; color: var(--text-3);">
+                                    @{{ post.author.username }} · {{ post.published_at|timesince }} ago
+                                    {% if post.category %} · {{ post.category.name }}{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'news:post_detail' post.id %}" style="display: block; color: inherit;">
+                            {% if post.highlighted_title %}
+                            <h3 style="font-size: 15.5px; font-weight: 700; margin-bottom: 6px; line-height: 1.35;">
+                                {{ post.highlighted_title|safe }}
+                            </h3>
+                            {% endif %}
+                            <p style="font-size: 13.5px; color: var(--text-2); line-height: 1.55; margin-bottom: 10px;">
+                                {{ post.highlighted_snippet|safe }}
+                            </p>
+                        </a>
+
+                        {% if post.image or post.image_url %}
+                        <a href="{% url 'news:post_detail' post.id %}" style="display: block; border-radius: var(--r); overflow: hidden; margin-bottom: 12px;">
+                            {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="" style="width: 100%; max-height: 400px; object-fit: cover;">
+                            {% else %}
+                            <img src="{{ post.image_url }}" alt="" style="width: 100%; max-height: 400px; object-fit: cover;" onerror="this.parentElement.style.display='none'">
+                            {% endif %}
+                        </a>
+                        {% endif %}
+
+                        <div style="display: flex; gap: 18px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-3);">
+                            <span><i class="far fa-heart"></i> {{ post.likes.count }}</span>
+                            <span><i class="far fa-comment"></i> {{ post.comments_count }}</span>
+                            <span><i class="far fa-bookmark"></i> {{ post.bookmarks.count }}</span>
+                            <span><i class="far fa-share-square"></i> {{ post.shares|default:0 }}</span>
+                            <span style="margin-left: auto;"><i class="far fa-eye"></i> {{ post.views }}</span>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+
+                {% if results.page_obj and results.page_obj.has_other_pages %}
+                <div class="pager">
+                    {% if results.page_obj.has_previous %}
+                    <a href="?q={{ query|urlencode }}&type={{ filter_type }}&page={{ results.page_obj.previous_page_number }}" class="btn btn-outline">
+                        <i class="fas fa-chevron-left"></i> Prev
+                    </a>
+                    {% endif %}
+                    <span class="btn btn-outline" style="cursor:default;">
+                        {{ results.page_obj.number }} / {{ results.page_obj.paginator.num_pages }}
+                    </span>
+                    {% if results.page_obj.has_next %}
+                    <a href="?q={{ query|urlencode }}&type={{ filter_type }}&page={{ results.page_obj.next_page_number }}" class="btn btn-outline">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            {% endif %}
+
+        {% endif %}
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-lightbulb"></i> Search tips</div>
+            <div class="card-body" style="font-size: 12.5px; color: var(--text-2); line-height: 1.7;">
+                <p style="margin-bottom: 6px;">✓ Try specific keywords</p>
+                <p style="margin-bottom: 6px;">✓ Search for @username</p>
+                <p style="margin-bottom: 6px;">✓ Use category names</p>
+                <p style="margin: 0;">✓ Filter by type for best results</p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<nav class="mobile-nav">
+    <a href="{% url 'core:home' %}"><i class="fas fa-house"></i><span>Home</span></a>
+    <a href="{% url 'news:online_news' %}"><i class="fas fa-newspaper"></i><span>News</span></a>
+    <a href="{% url 'core:search' %}" class="active"><i class="fas fa-search"></i><span>Search</span></a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'accounts:profile' user.username %}"><i class="fas fa-user"></i><span>Profile</span></a>
+    {% else %}
+    <a href="{% url 'accounts:login' %}"><i class="fas fa-user"></i><span>Sign in</span></a>
+    {% endif %}
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-user-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: inherit;
+    transition: background .15s;
+}
+.search-user-row:last-child { border-bottom: none; }
+.search-user-row:hover { background: var(--surface-2); }
+
+.search-user-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--brand-soft), var(--brand));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 16px;
+}
+.search-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.search-user-info { flex: 1; min-width: 0; }
+.search-user-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+.search-user-handle {
+    font-size: 12px;
+    color: var(--text-3);
+}
+.search-user-bio {
+    font-size: 12px;
+    color: var(--text-2);
+    margin-top: 2px;
+}
+
+/* Search highlight */
+mark {
+    background: #fef08a;
+    color: var(--text);
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

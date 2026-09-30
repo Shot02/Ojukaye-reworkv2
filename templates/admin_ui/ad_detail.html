@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}{{ ad.title }}{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-bullhorn"></i> Ad</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:admin_ads' %}" class="side-link"><i class="fas fa-arrow-left"></i> All Ads</a>
+                <a href="{% url 'core:admin_ad_detail' ad.id %}" class="side-link active"><i class="fas fa-chart-line"></i> Details</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">{{ ad.title }}</h1>
+            <p class="page-sub">{{ ad.get_ad_type_display }} · {{ ad.get_status_display }}</p>
+        </header>
+
+        <div class="mini-stats">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ total_impressions }}</div>
+                <div class="mini-stat-label">Impressions</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ total_clicks }}</div>
+                <div class="mini-stat-label">Clicks</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ ctr }}%</div>
+                <div class="mini-stat-label">CTR</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">₦{{ total_cost|floatformat:2 }}</div>
+                <div class="mini-stat-label">Cost</div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 14px;">
+            <div class="card-head"><i class="fas fa-image"></i> Preview</div>
+            <div class="card-body">
+                {% if ad.image %}
+                <img src="{{ ad.image.url }}" alt="{{ ad.title }}" style="max-width: 100%; border-radius: var(--r); margin-bottom: 12px;">
+                {% elif ad.image_url %}
+                <img src="{{ ad.image_url }}" alt="{{ ad.title }}" style="max-width: 100%; border-radius: var(--r); margin-bottom: 12px;" onerror="this.style.display='none'">
+                {% endif %}
+                {% if ad.description %}
+                <p style="font-size: 14px; color: var(--text-2); margin-bottom: 12px;">{{ ad.description }}</p>
+                {% endif %}
+                <p style="font-size: 13px; color: var(--text-3);">
+                    <strong>Target URL:</strong> <a href="{{ ad.target_url }}" target="_blank">{{ ad.target_url }}</a>
+                </p>
+                <p style="font-size: 13px; color: var(--text-3);">
+                    <strong>Dates:</strong> {{ ad.start_date|date:"M d, Y" }} → {{ ad.end_date|date:"M d, Y" }}
+                </p>
+                <p style="font-size: 13px; color: var(--text-3);">
+                    <strong>Budget:</strong> ₦{{ ad.budget|floatformat:2 }} · <strong>Spent:</strong> ₦{{ ad.spent|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><i class="fas fa-chart-bar"></i> Daily Analytics</div>
+            <div class="card-body" style="padding: 0;">
+                {% if analytics %}
+                <table class="ads-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Impressions</th>
+                            <th>Clicks</th>
+                            <th>CTR</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in analytics %}
+                        <tr>
+                            <td>{{ a.date|date:"M d, Y" }}</td>
+                            <td>{{ a.impressions }}</td>
+                            <td>{{ a.clicks }}</td>
+                            <td>{{ a.ctr|floatformat:2 }}%</td>
+                            <td>₦{{ a.cost|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div style="padding: 30px; text-align: center;">
+                    <p style="color: var(--text-3);">No analytics yet. This ad hasn't been shown.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <aside class="col col-right"></aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.mini-stats { display: flex; gap: 8px; margin-bottom: 14px; }
+.mini-stat { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; text-align: center; }
+.mini-stat-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.mini-stat-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.ads-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ads-table thead th { text-align: left; padding: 10px 12px; background: var(--surface-2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); border-bottom: 1px solid var(--border); }
+.ads-table tbody td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text-2); }
+</style>
+{% endblock %}

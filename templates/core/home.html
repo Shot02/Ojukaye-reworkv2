@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+
+{# ============ MOBILE DRAWER CONTENT ============ #}
+{% block sidebar_menu %}
+    {% include 'includes/_home_left_sidebar.html' %}
+{% endblock %}
+
+{% block sidebar_menu_extra %}
+    {% include 'includes/_home_right_extras.html' %}
+{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <!-- ================= LEFT SIDEBAR (desktop only) ================= -->
+    <aside class="col col-left">
+
+        {% if user.is_authenticated %}
+        <div class="card">
+            <div class="card-body" style="padding: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <a href="{% url 'accounts:profile' user.username %}" style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px;">
+                        {% if user.profile.profile_pic %}
+                        <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}" style="width:100%;height:100%;object-fit:cover;">
+                        {% else %}
+                        {{ user.username|first|upper }}
+                        {% endif %}
+                    </a>
+                    <div style="min-width: 0; flex: 1;">
+                        <a href="{% url 'accounts:profile' user.username %}" class="truncate" style="font-size: 14px; font-weight: 700; color: var(--text); display: block;">
+                            {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <span class="truncate" style="font-size: 12px; color: var(--text-3); display: block;">@{{ user.username }}</span>
+                    </div>
+                </div>
+                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-outline btn-sm btn-block">
+                    <i class="fas fa-pen"></i> Edit profile
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% include 'includes/_home_left_sidebar.html' %}
+
+        {% if user.is_authenticated %}
+        <div class="card">
+            <div class="card-head"><i class="fas fa-chart-simple"></i> Your Activity</div>
+            <div class="card-body" style="padding: 12px;">
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-num">{{ user_stats.posts|default:0 }}</div>
+                        <div class="stat-lbl">Posts</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">{{ user_stats.likes_given|default:0 }}</div>
+                        <div class="stat-lbl">Likes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">{{ user_stats.comments|default:0 }}</div>
+                        <div class="stat-lbl">Comments</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">{{ user_stats.reposts|default:0 }}</div>
+                        <div class="stat-lbl">Reposts</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </aside>
+
+    <!-- ================= CENTER ================= -->
+    <main class="col col-center">
+
+        {% if user.is_authenticated and view == 'feed' %}
+        <div class="card" style="margin-bottom: 14px;">
+            <div class="card-body" style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px;">
+                    {% if user.profile.profile_pic %}
+                    <img src="{{ user.profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+                <a href="{% url 'socialapp:create_post' %}" style="flex: 1; height: 42px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-full); padding: 0 16px; display: flex; align-items: center; color: var(--text-3); font-size: 13.5px;">
+                    What's on your mind, {{ user.first_name|default:user.username }}?
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if user.is_authenticated or view == 'feed' %}
+        <div class="feed-tabs">
+            <a href="?feed=for-you&view={{ view }}" class="feed-tab {% if feed == 'for-you' %}active{% endif %}">For You</a>
+            <a href="?feed=following&view={{ view }}" class="feed-tab {% if feed == 'following' %}active{% endif %}">
+                Following
+                {% if following_count %}<span class="feed-tab-count">{{ following_count }}</span>{% endif %}
+            </a>
+        </div>
+        {% endif %}
+
+        {% if user.is_authenticated %}
+        <div class="view-tabs">
+            <a href="?feed={{ feed }}&view=feed" class="view-tab {% if view == 'feed' %}active{% endif %}">Feed</a>
+            <a href="?feed={{ feed }}&view=your-posts" class="view-tab {% if view == 'your-posts' %}active{% endif %}">Your Posts</a>
+            <a href="?feed={{ feed }}&view=interacted" class="view-tab {% if view == 'interacted' %}active{% endif %}">Interacted</a>
+            <a href="?feed={{ feed }}&view=activity" class="view-tab {% if view == 'activity' %}active{% endif %}">Activity</a>
+        </div>
+        {% endif %}
+
+        {% if view == 'feed' or view == 'your-posts' %}
+
+            {% if feed_posts %}
+                {% for post in feed_posts %}
+                <article class="card" style="margin-bottom: 14px;">
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <a href="{% url 'accounts:profile' post.author.username %}" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 15px;">
+                                {% if post.author.profile.profile_pic %}
+                                <img src="{{ post.author.profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                {{ post.author.username|first|upper }}
+                                {% endif %}
+                            </a>
+                            <div style="flex: 1; min-width: 0;">
+                                <a href="{% url 'accounts:profile' post.author.username %}" class="truncate" style="font-size: 13.5px; font-weight: 600; color: var(--text); display: block;">
+                                    {{ post.author.get_full_name|default:post.author.username }}
+                                </a>
+                                <span style="font-size: 11.5px; color: var(--text-3);">
+                                    @{{ post.author.username }} · {{ post.published_at|timesince }} ago
+                                    {% if post.category %} · {{ post.category.name }}{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'news:post_detail' post.id %}" style="display: block; color: inherit;">
+                            {% if post.title %}<h3 style="font-size: 15.5px; font-weight: 700; margin-bottom: 6px; line-height: 1.35;">{{ post.title }}</h3>{% endif %}
+                            <p style="font-size: 13.5px; color: var(--text-2); line-height: 1.55; margin-bottom: 10px;">
+                                {{ post.content|truncatechars:220 }}
+                            </p>
+                        </a>
+
+                        {% if post.image or post.image_url %}
+                        <a href="{% url 'news:post_detail' post.id %}" style="display: block; border-radius: var(--r); overflow: hidden; margin-bottom: 12px;">
+                            {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="" style="width: 100%; max-height: 400px; object-fit: cover;">
+                            {% else %}
+                            <img src="{{ post.image_url }}" alt="" style="width: 100%; max-height: 400px; object-fit: cover;" onerror="this.parentElement.style.display='none'">
+                            {% endif %}
+                        </a>
+                        {% endif %}
+
+                        <div style="display: flex; gap: 18px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-3);">
+                            <span><i class="far fa-heart"></i> {{ post.likes.count }}</span>
+                            <span><i class="far fa-comment"></i> {{ post.comments_count }}</span>
+                            <span><i class="far fa-bookmark"></i> {{ post.bookmarks.count }}</span>
+                            <span><i class="far fa-share-square"></i> {{ post.shares|default:0 }}</span>
+                            <span style="margin-left: auto;"><i class="far fa-eye"></i> {{ post.views }}</span>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+
+            {% elif view == 'your-posts' %}
+                <div class="card empty-card">
+                    <i class="fas fa-feather-pointed"></i>
+                    <h3>No posts yet</h3>
+                    <p>Share your first thought with the community.</p>
+                    <a href="{% url 'socialapp:create_post' %}" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-pen"></i> Create post
+                    </a>
+                </div>
+
+            {% elif feed == 'following' and not user.is_authenticated %}
+                <div class="card empty-card">
+                    <i class="fas fa-lock"></i>
+                    <h3>Sign in to see your feed</h3>
+                    <p>Follow people to see their posts here.</p>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-sign-in-alt"></i> Sign in
+                    </a>
+                </div>
+
+            {% elif feed == 'following' and following_count == 0 %}
+                <div class="card empty-card">
+                    <i class="fas fa-user-plus"></i>
+                    <h3>You're not following anyone</h3>
+                    <p>Follow some people to see their posts here.</p>
+                </div>
+
+            {% else %}
+                <div class="card empty-card">
+                    <i class="fas fa-comments"></i>
+                    <h3>Nothing here yet</h3>
+                    <p>Be the first to share something.</p>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'socialapp:create_post' %}" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-pen"></i> Create post
+                    </a>
+                    {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-user-plus"></i> Join Ojukaye
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        {% elif view == 'interacted' %}
+
+            {% if interacted_items %}
+                {% for item in interacted_items %}
+                <article class="card" style="margin-bottom: 14px;">
+                    <div class="card-body">
+                        <div class="interaction-badges" style="margin-bottom: 10px;">
+                            {% for badge in item.badges %}
+                                {% if badge == 'liked' %}
+                                <span class="interaction-badge liked"><i class="fas fa-heart"></i> Liked</span>
+                                {% elif badge == 'commented' %}
+                                <span class="interaction-badge commented"><i class="fas fa-comment"></i> Commented</span>
+                                {% elif badge == 'reposted' %}
+                                <span class="interaction-badge reposted"><i class="fas fa-retweet"></i> Reposted</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <a href="{% url 'accounts:profile' item.post.author.username %}" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--brand-soft), var(--brand)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">
+                                {% if item.post.author.profile.profile_pic %}
+                                <img src="{{ item.post.author.profile.profile_pic.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                {{ item.post.author.username|first|upper }}
+                                {% endif %}
+                            </a>
+                            <div style="flex: 1; min-width: 0;">
+                                <a href="{% url 'accounts:profile' item.post.author.username %}" class="truncate" style="font-size: 13px; font-weight: 600; color: var(--text); display: block;">
+                                    {{ item.post.author.get_full_name|default:item.post.author.username }}
+                                </a>
+                                <span style="font-size: 11px; color: var(--text-3);">
+                                    @{{ item.post.author.username }} · {{ item.post.published_at|timesince }} ago
+                                </span>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'news:post_detail' item.post.id %}" style="display: block; color: inherit;">
+                            {% if item.post.title %}<h3 style="font-size: 15px; font-weight: 700; margin-bottom: 6px; line-height: 1.35;">{{ item.post.title }}</h3>{% endif %}
+                            <p style="font-size: 13.5px; color: var(--text-2); line-height: 1.55; margin-bottom: 10px;">
+                                {{ item.post.content|truncatechars:200 }}
+                            </p>
+                        </a>
+
+                        <div style="display: flex; gap: 18px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-3);">
+                            <span><i class="far fa-heart"></i> {{ item.post.likes.count }}</span>
+                            <span><i class="far fa-comment"></i> {{ item.post.comments_count }}</span>
+                            <span><i class="far fa-bookmark"></i> {{ item.post.bookmarks.count }}</span>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <div class="card empty-card">
+                    <i class="fas fa-heart"></i>
+                    <h3>No interactions yet</h3>
+                    <p>Posts you like, comment on, or repost will appear here.</p>
+                    <a href="{% url 'news:online_news' %}" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-compass"></i> Discover posts
+                    </a>
+                </div>
+            {% endif %}
+
+        {% elif view == 'activity' %}
+
+            {% if activities %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="activity-list">
+                        {% for act in activities %}
+                        <div class="activity-row">
+                            <div class="activity-icon">
+                                {% if act.activity_type == 'post_created' %}
+                                <i class="fas fa-pen-to-square" style="color: var(--brand);"></i>
+                                {% elif act.activity_type == 'post_liked' %}
+                                <i class="fas fa-heart" style="color: var(--danger);"></i>
+                                {% elif act.activity_type == 'comment_created' %}
+                                <i class="fas fa-comment" style="color: var(--success);"></i>
+                                {% elif act.activity_type == 'post_reposted' %}
+                                <i class="fas fa-retweet" style="color: #8b5cf6;"></i>
+                                {% elif act.activity_type == 'post_saved' %}
+                                <i class="fas fa-bookmark" style="color: var(--warning);"></i>
+                                {% elif act.activity_type == 'followed_user' %}
+                                <i class="fas fa-user-plus" style="color: var(--success);"></i>
+                                {% else %}
+                                <i class="fas fa-circle" style="color: var(--text-3); font-size: 8px;"></i>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-text">
+                                    {% if act.activity_type == 'post_created' %}You created a post
+                                    {% elif act.activity_type == 'post_liked' %}You liked a post
+                                    {% elif act.activity_type == 'comment_created' %}You commented
+                                    {% elif act.activity_type == 'post_reposted' %}You reposted
+                                    {% elif act.activity_type == 'post_saved' %}You saved a post
+                                    {% elif act.activity_type == 'followed_user' %}You followed
+                                        {% if act.target_user %}<a href="{% url 'accounts:profile' act.target_user.username %}">@{{ act.target_user.username }}</a>{% endif %}
+                                    {% elif act.activity_type == 'profile_updated' %}You updated your profile
+                                    {% else %}{{ act.get_activity_type_display }}{% endif %}
+
+                                    {% if act.post %}
+                                    · <a href="{% url 'news:post_detail' act.post.id %}">{{ act.post.title|default:act.post.content|truncatechars:40 }}</a>
+                                    {% endif %}
+                                </div>
+                                <div class="activity-time">{{ act.created_at|timesince }} ago</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card empty-card">
+                <i class="fas fa-clock"></i>
+                <h3>No recent activity</h3>
+                <p>Your activity will show here as you engage with the platform.</p>
+            </div>
+            {% endif %}
+
+        {% endif %}
+    </main>
+
+    <!-- ================= RIGHT SIDEBAR (desktop only) ================= -->
+    <aside class="col col-right">
+
+        {% include 'includes/_home_right_extras.html' %}
+
+        {% if user.is_authenticated and following_preview %}
+        <div class="card">
+            <div class="card-head"><i class="fas fa-users"></i> Your Network</div>
+            <div class="card-body">
+                <div style="font-size: 11px; color: var(--text-3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600;">
+                    Following ({{ user_stats.following|default:0 }})
+                </div>
+                <div class="network-avatars">
+                    {% for f in following_preview %}
+                    <a href="{% url 'accounts:profile' f.following.username %}" class="network-avatar" title="{{ f.following.username }}">
+                        {% if f.following.profile.profile_pic %}
+                        <img src="{{ f.following.profile.profile_pic.url }}" alt="{{ f.following.username }}">
+                        {% else %}
+                        {{ f.following.username|first|upper }}
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+
+                {% if followers_preview %}
+                <div style="font-size: 11px; color: var(--text-3); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600;">
+                    Followers ({{ user_stats.followers|default:0 }})
+                </div>
+                <div class="network-avatars">
+                    {% for f in followers_preview %}
+                    <a href="{% url 'accounts:profile' f.follower.username %}" class="network-avatar" title="{{ f.follower.username }}">
+                        {% if f.follower.profile.profile_pic %}
+                        <img src="{{ f.follower.profile.profile_pic.url }}" alt="{{ f.follower.username }}">
+                        {% else %}
+                        {{ f.follower.username|first|upper }}
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if user.is_authenticated and bookmark_count %}
+        <div class="card">
+            <div class="card-head"><i class="fas fa-bookmark"></i> Your Bookmarks</div>
+            <div class="card-body">
+                <div style="text-align: center; padding: 6px 0 10px;">
+                    <div style="font-size: 28px; font-weight: 800; color: var(--brand);">{{ bookmark_count }}</div>
+                    <div style="font-size: 12px; color: var(--text-3);">saved posts</div>
+                </div>
+                <a href="{% url 'socialapp:saved_posts' %}" class="btn btn-outline btn-sm btn-block">
+                    View all <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+    </aside>
+
+</div>
+
+<!-- Mobile bottom nav -->
+<nav class="mobile-nav">
+    <a href="{% url 'core:home' %}" class="active"><i class="fas fa-house"></i><span>Home</span></a>
+    <a href="{% url 'news:online_news' %}"><i class="fas fa-newspaper"></i><span>News</span></a>
+    <a href="{% url 'news:online_news' %}?sort=trending"><i class="fas fa-fire"></i><span>Trending</span></a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'accounts:profile' user.username %}"><i class="fas fa-user"></i><span>Profile</span></a>
+    {% else %}
+    <a href="{% url 'accounts:login' %}"><i class="fas fa-user"></i><span>Sign in</span></a>
+    {% endif %}
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.view-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+}
+.view-tabs::-webkit-scrollbar { display: none; }
+.view-tab {
+    padding: 8px 16px;
+    border-radius: var(--r-full);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all .15s;
+}
+.view-tab:hover { border-color: var(--border-strong); color: var(--text); }
+.view-tab.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+.who-follow-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+}
+.who-follow-item:last-child { border-bottom: none; }
+.who-follow-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--brand-soft), var(--brand));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 14px;
+}
+.who-follow-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.who-follow-info { flex: 1; min-width: 0; }
+.follow-mini-btn { height: 28px; padding: 0 12px; font-size: 12px; }
+.follow-mini-btn.following {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-2);
+}
+
+.network-avatars { display: flex; flex-wrap: wrap; gap: 6px; }
+.network-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--brand-soft), var(--brand));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 13px;
+    transition: transform .15s;
+    border: 2px solid var(--surface);
+    text-decoration: none;
+}
+.network-avatar:hover { transform: scale(1.08); z-index: 2; }
+.network-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-item { text-align: center; padding: 6px 4px; }
+.stat-num { font-size: 18px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.stat-lbl { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.interaction-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.interaction-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: var(--r-full);
+}
+.interaction-badge.liked { background: var(--danger-bg); color: var(--danger-text); }
+.interaction-badge.commented { background: var(--success-bg); color: var(--success-text); }
+.interaction-badge.reposted { background: #ede9fe; color: #6d28d9; }
+
+.activity-list { display: flex; flex-direction: column; }
+.activity-row {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+.activity-row:last-child { border-bottom: none; }
+.activity-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.activity-content { flex: 1; min-width: 0; }
+.activity-text { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.activity-text a { color: var(--text); font-weight: 600; text-decoration: none; }
+.activity-text a:hover { color: var(--brand); }
+.activity-time { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    document.querySelectorAll('.follow-mini-btn').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const username = this.dataset.username;
+            const original = this.innerHTML;
+            this.disabled = true;
+
+            try {
+                const res = await fetch(`/accounts/follow/${username}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    if (data.followed) {
+                        this.innerHTML = '<i class="fas fa-check"></i> Following';
+                        this.classList.add('following');
+                    } else {
+                        this.innerHTML = 'Follow';
+                        this.classList.remove('following');
+                    }
+                } else {
+                    this.innerHTML = original;
+                }
+            } catch (err) {
+                console.error(err);
+                this.innerHTML = original;
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

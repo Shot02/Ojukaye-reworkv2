@@ -1,0 +1,652 @@
+{% extends 'base.html' %}
+{% block title %}Online News{% endblock %}
+
+{# ================================================================
+   MOBILE DRAWER CONTENT
+   These blocks render inside the nav drawer on mobile only.
+   On desktop, the drawer is hidden and these blocks are ignored.
+   ================================================================ #}
+{% block sidebar_menu %}
+    {% include 'includes/_news_left_sidebar.html' %}
+{% endblock %}
+
+{% block sidebar_menu_extra %}
+    {% include 'includes/_news_right_extras.html' %}
+{% endblock %}
+
+
+{% block body %}
+<div class="app">
+
+    <!-- ============ LEFT SIDEBAR (desktop only, hidden on mobile) ============ -->
+    <aside class="col col-left">
+        {% include 'includes/_news_left_sidebar.html' %}
+
+        <!-- LEFT SIDEBAR AD (kept on desktop) -->
+        {% if sidebar_ads %}
+        {% with sidebar_ads.0 as ad %}
+        <div class="card ad-card" data-ad-id="{{ ad.uuid }}">
+            <div class="card-head">
+                <i class="fas fa-bullhorn"></i> Sponsored
+                <span class="ad-label">Ad</span>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <a href="{{ ad.target_url }}" target="_blank" rel="noopener" class="ad-link" onclick="trackAdClick('{{ ad.uuid }}'); return true;">
+                    {% if ad.image %}
+                    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" style="width: 100%; height: auto; display: block;">
+                    {% elif ad.image_url %}
+                    <img src="{{ ad.image_url }}" alt="{{ ad.title }}" style="width: 100%; height: auto; display: block;" onerror="this.style.display='none'">
+                    {% endif %}
+                    <div style="padding: 12px 14px;">
+                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 4px;">
+                            {{ ad.title|truncatechars:50 }}
+                        </div>
+                        {% if ad.description %}
+                        <div style="font-size: 12px; color: var(--text-3); line-height: 1.5;">
+                            {{ ad.description|truncatechars:80 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        </div>
+        <script>trackAdImpression('{{ ad.uuid }}');</script>
+        {% endwith %}
+        {% endif %}
+
+        {% if not user.is_authenticated %}
+        <div class="card">
+            <div class="card-body" style="text-align: center; padding: 20px 16px;">
+                <i class="fas fa-user-plus" style="font-size: 24px; color: var(--brand); margin-bottom: 10px;"></i>
+                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">Join Ojukaye</h4>
+                <p style="font-size: 12.5px; color: var(--text-3); margin-bottom: 14px; line-height: 1.5;">
+                    Sign up to like, comment, and read full articles.
+                </p>
+                <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm btn-block">Create account</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline btn-sm btn-block" style="margin-top: 6px;">Sign in</a>
+            </div>
+        </div>
+        {% endif %}
+    </aside>
+
+    <!-- ============ CENTER FEED ============ -->
+    <main class="col col-center">
+
+        <!-- BANNER SLIDER (posts + ads) -->
+        {% if banner_posts or banner_ads %}
+        <div class="banner-slider" id="bannerSlider">
+            <div class="banner-track" id="bannerTrack">
+                {% for b in banner_posts %}
+                <a href="{% url 'news:post_detail' b.id %}" class="banner-slide">
+                    <div class="banner-image">
+                        {% if b.image %}
+                        <img src="{{ b.image.url }}" alt="{{ b.title }}">
+                        {% elif b.image_url %}
+                        <img src="{{ b.image_url }}" alt="{{ b.title }}" onerror="this.style.display='none'">
+                        {% endif %}
+                    </div>
+                    <div class="banner-overlay">
+                        {% if b.category %}<span class="banner-cat">{{ b.category.name }}</span>{% endif %}
+                        <h2 class="banner-title">{{ b.title }}</h2>
+                        <p class="banner-excerpt">{{ b.content|truncatechars:120 }}</p>
+                    </div>
+                </a>
+                {% endfor %}
+
+                {% for ad in banner_ads %}
+                <a href="{{ ad.target_url }}" target="_blank" rel="noopener" class="banner-slide" data-ad-id="{{ ad.uuid }}" onclick="trackAdClick('{{ ad.uuid }}'); return true;">
+                    <div class="banner-image">
+                        {% if ad.image %}
+                        <img src="{{ ad.image.url }}" alt="{{ ad.title }}">
+                        {% elif ad.image_url %}
+                        <img src="{{ ad.image_url }}" alt="{{ ad.title }}" onerror="this.style.display='none'">
+                        {% endif %}
+                    </div>
+                    <div class="banner-overlay">
+                        <span class="banner-cat sponsored">Sponsored</span>
+                        <h2 class="banner-title">{{ ad.title }}</h2>
+                        {% if ad.description %}
+                        <p class="banner-excerpt">{{ ad.description|truncatechars:120 }}</p>
+                        {% endif %}
+                        <span class="banner-cta">Learn More <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+
+            {% if banner_posts|length|add:banner_ads|length > 1 %}
+            <button class="banner-nav banner-prev" id="bannerPrev" type="button" aria-label="Previous">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="banner-nav banner-next" id="bannerNext" type="button" aria-label="Next">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="banner-dots" id="bannerDots">
+                {% for b in banner_posts %}
+                <button class="banner-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" type="button"></button>
+                {% endfor %}
+                {% for ad in banner_ads %}
+                <button class="banner-dot" data-index="{{ banner_posts|length|add:forloop.counter0 }}" type="button"></button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- SORT TABS -->
+        <div class="feed-tabs">
+            <a href="?sort=latest{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if media %}&media={{ media }}{% endif %}{% if verification %}&verification={{ verification }}{% endif %}"
+               class="feed-tab {% if sort == 'latest' or not sort %}active{% endif %}">Latest</a>
+            <a href="?sort=trending{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if media %}&media={{ media }}{% endif %}{% if verification %}&verification={{ verification }}{% endif %}"
+               class="feed-tab {% if sort == 'trending' %}active{% endif %}">Trending</a>
+            <a href="?sort=popular{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if media %}&media={{ media }}{% endif %}{% if verification %}&verification={{ verification }}{% endif %}"
+               class="feed-tab {% if sort == 'popular' %}active{% endif %}">Popular</a>
+        </div>
+
+        <!-- NEWS CARDS -->
+        {% if posts %}
+            {% for post in posts %}
+            <article class="card news-card">
+                <div class="news-card-inner">
+                    <a href="{% url 'news:post_detail' post.id %}" class="news-card-image">
+                        {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="{{ post.title }}">
+                        {% elif post.image_url %}
+                        <img src="{{ post.image_url }}" alt="{{ post.title }}" onerror="this.style.display='none'">
+                        {% endif %}
+                    </a>
+                    <div class="news-card-body">
+                        <div class="news-card-meta">
+                            {% if post.category %}
+                            <a href="{% url 'news:online_news' %}?category={{ post.category.slug }}" class="news-card-cat">
+                                {{ post.category.name }}
+                            </a>
+                            {% endif %}
+                            {% if post.external_source %}
+                            <span class="dot">·</span>
+                            <span class="text-muted" style="font-size:11px;">{{ post.external_source }}</span>
+                            {% endif %}
+                            {% if post.verification_status == 'verified' %}
+                            <span class="badge-verified"><i class="fas fa-check-circle"></i> Verified</span>
+                            {% elif post.verification_status == 'pending' %}
+                            <span class="badge-pending"><i class="fas fa-clock"></i> Pending</span>
+                            {% endif %}
+                        </div>
+                        <h2 class="news-card-title">
+                            <a href="{% url 'news:post_detail' post.id %}">{{ post.title }}</a>
+                        </h2>
+                        <p class="news-card-excerpt">{{ post.content|truncatechars:160 }}</p>
+                        <div class="news-card-foot">
+                            <span><i class="far fa-clock"></i> {{ post.published_at|timesince }} ago</span>
+                            <span><i class="fas fa-eye"></i> {{ post.views }}</span>
+                            <span><i class="far fa-heart"></i> {{ post.likes.count }}</span>
+                            <span><i class="far fa-comment"></i> {{ post.comments_count }}</span>
+                            <span><i class="far fa-bookmark"></i> {{ post.bookmarks.count }}</span>
+                            <span><i class="far fa-share-square"></i> {{ post.shares|default:0 }}</span>
+                            {% if post.has_media %}
+                            <span class="media-flag"><i class="fas fa-play-circle"></i> Media</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+
+            {% if page_obj.has_other_pages %}
+            <div class="pager">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="btn btn-outline">
+                    <i class="fas fa-chevron-left"></i> Prev
+                </a>
+                {% endif %}
+                <span class="btn btn-outline" style="cursor:default;">
+                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                </span>
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if current_category %}&category={{ current_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="btn btn-outline">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        {% else %}
+            <div class="card empty-card">
+                <i class="fas fa-newspaper"></i>
+                <h3>No news found</h3>
+                <p>
+                    {% if search_query or current_category or media or verification %}
+                    No articles match your filters.
+                    {% else %}
+                    Run <code>python manage.py fetch_news</code> to pull articles.
+                    {% endif %}
+                </p>
+                {% if search_query or current_category or media or verification %}
+                <a href="{% url 'news:online_news' %}" class="btn btn-outline" style="margin-top: 16px;">
+                    Clear filters
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+    </main>
+
+    <!-- ============ RIGHT SIDEBAR (desktop only, hidden on mobile) ============ -->
+    <aside class="col col-right">
+
+        {% if fetcher_stats %}
+        <div class="card">
+            <div class="card-head"><i class="fas fa-robot"></i> Fetcher Stats</div>
+            <div class="card-body">
+                <div class="stat-mini-row">
+                    <span class="text-2">Total fetched</span>
+                    <strong>{{ fetcher_stats.total_fetched }}</strong>
+                </div>
+                <div class="stat-mini-row">
+                    <span class="text-2">Last 24h</span>
+                    <strong>{{ fetcher_stats.last_24h }}</strong>
+                </div>
+                <div class="stat-mini-row">
+                    <span class="text-2">With media</span>
+                    <strong>{{ fetcher_stats.with_media }}</strong>
+                </div>
+                <div class="stat-mini-row">
+                    <span class="text-2">Verified</span>
+                    <strong style="color: var(--success);">{{ fetcher_stats.verified }}</strong>
+                </div>
+                <div class="stat-mini-row">
+                    <span class="text-2">Pending AI</span>
+                    <strong style="color: var(--warning);">{{ fetcher_stats.pending }}</strong>
+                </div>
+                <a href="{% url 'core:admin_quick_fetch' %}" class="btn btn-outline btn-sm btn-block" style="margin-top: 10px;">
+                    <i class="fas fa-bolt"></i> Control Center
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- SIDEBAR AD 1 -->
+        {% if sidebar_ads %}
+        {% with sidebar_ads.0 as ad %}
+        {% if ad %}
+        <div class="card ad-card" data-ad-id="{{ ad.uuid }}">
+            <div class="card-head">
+                <i class="fas fa-bullhorn"></i> Sponsored
+                <span class="ad-label">Ad</span>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <a href="{{ ad.target_url }}" target="_blank" rel="noopener" class="ad-link" onclick="trackAdClick('{{ ad.uuid }}'); return true;">
+                    {% if ad.image %}
+                    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" style="width: 100%; height: auto; display: block;">
+                    {% elif ad.image_url %}
+                    <img src="{{ ad.image_url }}" alt="{{ ad.title }}" style="width: 100%; height: auto; display: block;" onerror="this.style.display='none'">
+                    {% endif %}
+                    <div style="padding: 12px 14px;">
+                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 4px;">
+                            {{ ad.title|truncatechars:50 }}
+                        </div>
+                        {% if ad.description %}
+                        <div style="font-size: 12px; color: var(--text-3); line-height: 1.5;">
+                            {{ ad.description|truncatechars:80 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        </div>
+        <script>trackAdImpression('{{ ad.uuid }}');</script>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+
+        {% include 'includes/_news_right_extras.html' %}
+
+        <!-- SIDEBAR AD 2 -->
+        {% if sidebar_ads|length > 1 %}
+        {% with sidebar_ads.1 as ad %}
+        <div class="card ad-card" data-ad-id="{{ ad.uuid }}">
+            <div class="card-head">
+                <i class="fas fa-bullhorn"></i> Sponsored
+                <span class="ad-label">Ad</span>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <a href="{{ ad.target_url }}" target="_blank" rel="noopener" class="ad-link" onclick="trackAdClick('{{ ad.uuid }}'); return true;">
+                    {% if ad.image %}
+                    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" style="width: 100%; height: auto; display: block;">
+                    {% elif ad.image_url %}
+                    <img src="{{ ad.image_url }}" alt="{{ ad.title }}" style="width: 100%; height: auto; display: block;" onerror="this.style.display='none'">
+                    {% endif %}
+                    <div style="padding: 12px 14px;">
+                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 4px;">
+                            {{ ad.title|truncatechars:50 }}
+                        </div>
+                        {% if ad.description %}
+                        <div style="font-size: 12px; color: var(--text-3); line-height: 1.5;">
+                            {{ ad.description|truncatechars:80 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        </div>
+        <script>trackAdImpression('{{ ad.uuid }}');</script>
+        {% endwith %}
+        {% endif %}
+
+        {% if sponsored_posts %}
+        <div class="card">
+            <div class="card-head"><i class="fas fa-star"></i> Sponsored Posts</div>
+            <div class="card-body flush">
+                {% for s in sponsored_posts %}
+                <a href="{% url 'news:post_detail' s.id %}" class="side-link">
+                    <i class="fas fa-star" style="color: var(--warning);"></i>
+                    <span style="font-size: 13px;">{{ s.title|truncatechars:40 }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-head"><i class="fas fa-envelope-open-text"></i> Newsletter</div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-2);">
+                <p style="margin-bottom: 10px;">Get the top stories delivered to your inbox.</p>
+                <input type="email" placeholder="your@email.com" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--r-sm); font-size: 13px; margin-bottom: 8px;">
+                <button type="button" class="btn btn-primary btn-block btn-sm">Subscribe</button>
+            </div>
+        </div>
+
+    </aside>
+
+</div>
+
+<!-- Mobile bottom nav -->
+<nav class="mobile-nav">
+    <a href="{% url 'core:home' %}"><i class="fas fa-house"></i><span>Home</span></a>
+    <a href="{% url 'news:online_news' %}" class="active"><i class="fas fa-newspaper"></i><span>News</span></a>
+    <a href="{% url 'news:online_news' %}?sort=trending"><i class="fas fa-fire"></i><span>Trending</span></a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'accounts:profile' user.username %}"><i class="fas fa-user"></i><span>Profile</span></a>
+    {% else %}
+    <a href="{% url 'accounts:login' %}"><i class="fas fa-user"></i><span>Sign in</span></a>
+    {% endif %}
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============ AD CARDS ============ */
+.ad-card {
+    border: 1px solid var(--brand);
+    position: relative;
+}
+.ad-card .card-head {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+}
+.ad-label {
+    margin-left: auto;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: var(--r-full);
+    background: var(--brand);
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.ad-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: opacity .15s;
+}
+.ad-link:hover { opacity: .92; }
+
+/* ============ BANNER SLIDER ============ */
+.banner-slider {
+    position: relative;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    margin-bottom: 14px;
+    background: #0f172a;
+    height: 260px;
+}
+.banner-track {
+    display: flex;
+    height: 100%;
+    transition: transform .5s ease;
+    will-change: transform;
+}
+.banner-slide {
+    flex: 0 0 100%;
+    height: 100%;
+    position: relative;
+    display: block;
+    color: #fff;
+    text-decoration: none;
+}
+.banner-image {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+.banner-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.35) 55%, transparent 100%);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.banner-cat {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    background: var(--brand);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: var(--r-full);
+    align-self: flex-start;
+    margin-bottom: 10px;
+}
+.banner-cat.sponsored { background: #f59e0b; }
+.banner-title {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: #fff;
+    margin-bottom: 6px;
+    max-width: 700px;
+}
+.banner-excerpt {
+    font-size: 13px;
+    opacity: .85;
+    max-width: 600px;
+    line-height: 1.5;
+}
+.banner-cta {
+    font-size: 12.5px;
+    font-weight: 700;
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,.4);
+    padding-bottom: 2px;
+    align-self: flex-start;
+}
+.banner-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.85);
+    color: #111827;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all .15s;
+    z-index: 5;
+    backdrop-filter: blur(6px);
+    opacity: 0;
+}
+.banner-slider:hover .banner-nav { opacity: 1; }
+.banner-nav:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+.banner-prev { left: 12px; }
+.banner-next { right: 12px; }
+.banner-dots {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    display: flex;
+    gap: 6px;
+    z-index: 5;
+}
+.banner-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.45);
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+    padding: 0;
+}
+.banner-dot.active {
+    background: #fff;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* ============ BADGES / MISC ============ */
+.badge-verified {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    background: var(--success-bg);
+    color: var(--success-text);
+    border-radius: var(--r-full);
+}
+.badge-pending {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+    border-radius: var(--r-full);
+}
+.stat-mini-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    padding: 5px 0;
+}
+.stat-mini-row strong { color: var(--text); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 820px) {
+    .banner-slider { height: 200px; }
+    .banner-overlay { padding: 16px; }
+    .banner-title { font-size: 17px; }
+    .banner-excerpt { display: none; }
+    .banner-nav { display: none; }
+}
+@media (max-width: 560px) {
+    .banner-slider { height: 180px; }
+    .banner-title { font-size: 15px; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ============ AD TRACKING ============
+function trackAdImpression(adId) {
+    fetch(`/api/track-ad-impression/${adId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    }).catch(() => {});
+}
+function trackAdClick(adId) {
+    fetch(`/api/track-ad-click/${adId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    }).catch(() => {});
+}
+
+// ============ BANNER SLIDER ============
+document.addEventListener('DOMContentLoaded', function() {
+    const track = document.getElementById('bannerTrack');
+    const dots = document.querySelectorAll('.banner-dot');
+    if (!track || dots.length === 0) return;
+
+    let current = 0;
+    const total = dots.length;
+    let timer;
+
+    function go(i) {
+        current = (i + total) % total;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((d, idx) => d.classList.toggle('active', idx === current));
+    }
+    function next() { go(current + 1); }
+    function prev() { go(current - 1); }
+    function start() { if (total > 1) timer = setInterval(next, 6000); }
+    function stop() { clearInterval(timer); }
+    function reset() { stop(); start(); }
+
+    dots.forEach(d => {
+        d.addEventListener('click', function(e) {
+            e.preventDefault();
+            go(parseInt(this.dataset.index));
+            reset();
+        });
+    });
+
+    const prevBtn = document.getElementById('bannerPrev');
+    const nextBtn = document.getElementById('bannerNext');
+    if (prevBtn) prevBtn.addEventListener('click', function(e) { e.preventDefault(); prev(); reset(); });
+    if (nextBtn) nextBtn.addEventListener('click', function(e) { e.preventDefault(); next(); reset(); });
+
+    const slider = document.getElementById('bannerSlider');
+    if (slider) {
+        slider.addEventListener('mouseenter', stop);
+        slider.addEventListener('mouseleave', start);
+    }
+
+    let touchStartX = 0, touchDeltaX = 0;
+    if (slider) {
+        slider.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchDeltaX = 0;
+            stop();
+        }, { passive: true });
+        slider.addEventListener('touchmove', e => {
+            touchDeltaX = e.touches[0].clientX - touchStartX;
+        }, { passive: true });
+        slider.addEventListener('touchend', () => {
+            if (Math.abs(touchDeltaX) > 50) {
+                touchDeltaX < 0 ? next() : prev();
+            }
+            start();
+        });
+    }
+
+    start();
+});
+</script>
+{% endblock %}

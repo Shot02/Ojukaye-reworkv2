@@ -1,0 +1,523 @@
+{% extends 'base.html' %}
+{% block sidebar_menu %}
+    {% include 'includes/_admin_left_sidebar.html' %}
+{% endblock %}
+{% block title %}Manage Posts{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-gauge"></i> Admin</div>
+            <div class="card-body flush">
+                <a href="{% url 'core:admin_dashboard' %}" class="side-link">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{% url 'core:admin_posts' %}" class="side-link active">
+                    <i class="fas fa-file-alt"></i> Manage Posts
+                </a>
+                <a href="{% url 'core:admin_quick_fetch' %}" class="side-link">
+                    <i class="fas fa-bolt"></i> Quick Fetch
+                </a>
+                <a href="{% url 'core:admin_sources' %}" class="side-link">
+                    <i class="fas fa-globe"></i> Sources
+                </a>
+                <a href="{% url 'core:admin_subscribers' %}" class="side-link">
+                    <i class="fas fa-envelope"></i> Subscribers
+                </a>
+                <a href="{% url 'core:admin_settings' %}" class="side-link">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+
+        <header class="page-head">
+            <h1 class="page-title">Manage Posts</h1>
+            <p class="page-sub">Review, verify, and manage every post on the platform</p>
+        </header>
+
+        <div class="mini-stats">
+            <a href="?filter=all" class="mini-stat {% if filter_type == 'all' or not filter_type %}active{% endif %}">
+                <div class="mini-stat-value">{{ stats.total }}</div>
+                <div class="mini-stat-label">All</div>
+            </a>
+            <a href="?filter=pending" class="mini-stat {% if filter_type == 'pending' %}active{% endif %}">
+                <div class="mini-stat-value" style="color: var(--warning);">{{ stats.pending }}</div>
+                <div class="mini-stat-label">Pending</div>
+            </a>
+            <a href="?filter=verified" class="mini-stat {% if filter_type == 'verified' %}active{% endif %}">
+                <div class="mini-stat-value" style="color: var(--success);">{{ stats.verified }}</div>
+                <div class="mini-stat-label">Verified</div>
+            </a>
+            <a href="?filter=likely" class="mini-stat {% if filter_type == 'likely' %}active{% endif %}">
+                <div class="mini-stat-value" style="color: var(--brand);">{{ stats.likely }}</div>
+                <div class="mini-stat-label">Likely</div>
+            </a>
+            <a href="?filter=fake" class="mini-stat {% if filter_type == 'fake' %}active{% endif %}">
+                <div class="mini-stat-value" style="color: var(--danger);">{{ stats.fake }}</div>
+                <div class="mini-stat-label">Fake</div>
+            </a>
+            <a href="?filter=user_news" class="mini-stat {% if filter_type == 'user_news' %}active{% endif %}">
+                <div class="mini-stat-value">{{ stats.user_news }}</div>
+                <div class="mini-stat-label">User News</div>
+            </a>
+            <a href="?filter=auto_news" class="mini-stat {% if filter_type == 'auto_news' %}active{% endif %}">
+                <div class="mini-stat-value">{{ stats.auto_news }}</div>
+                <div class="mini-stat-label">Auto News</div>
+            </a>
+        </div>
+
+        <!-- Scope quick-actions -->
+        <div class="card" style="margin-bottom: 14px;">
+            <div class="card-body" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 12.5px; font-weight: 600; color: var(--text-2); margin-right: 4px;">Bulk AI:</span>
+                <button class="btn btn-outline btn-sm scope-btn" data-action="run_ai" data-scope="all_pending">
+                    <i class="fas fa-robot"></i> All pending
+                </button>
+                <button class="btn btn-outline btn-sm scope-btn" data-action="run_ai" data-scope="all_user">
+                    <i class="fas fa-robot"></i> All user news
+                </button>
+                <button class="btn btn-outline btn-sm scope-btn" data-action="run_ai" data-scope="all_auto">
+                    <i class="fas fa-robot"></i> All auto news
+                </button>
+                <span id="scopeStatus" style="font-size: 12.5px; color: var(--text-3); margin-left: 8px;"></span>
+            </div>
+        </div>
+
+        <!-- Filter bar (auto-submit) -->
+        <form method="get" class="filters-bar">
+            <input type="text" name="q" value="{{ search }}" placeholder="Search title, author, source…" class="filter-input">
+            <select name="category" class="filter-select" onchange="this.form.submit()">
+                <option value="">All categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="type" class="filter-select" onchange="this.form.submit()">
+                <option value="">All types</option>
+                <option value="discussion" {% if post_type == 'discussion' %}selected{% endif %}>Discussion</option>
+                <option value="news" {% if post_type == 'news' %}selected{% endif %}>Auto News</option>
+                <option value="user_news" {% if post_type == 'user_news' %}selected{% endif %}>User News</option>
+                <option value="profile_post" {% if post_type == 'profile_post' %}selected{% endif %}>Profile Post</option>
+            </select>
+            <select name="verification" class="filter-select" onchange="this.form.submit()">
+                <option value="">All verification</option>
+                <option value="verified" {% if verification == 'verified' %}selected{% endif %}>Verified</option>
+                <option value="likely_legit" {% if verification == 'likely_legit' %}selected{% endif %}>Likely</option>
+                <option value="pending" {% if verification == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="fake" {% if verification == 'fake' %}selected{% endif %}>Fake</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Search</button>
+            {% if search or category_id or post_type or verification %}
+            <a href="{% url 'core:admin_posts' %}" class="btn btn-outline btn-sm">Clear</a>
+            {% endif %}
+            <input type="hidden" name="filter" value="{{ filter_type }}">
+        </form>
+
+        <!-- Bulk action bar (shown when rows are selected) -->
+        <div class="card" id="bulkBar" style="margin-bottom: 14px; display: none;">
+            <div class="card-body" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 13.5px; font-weight: 600;">
+                    <span id="selectedCount">0</span> selected
+                </span>
+                <select id="bulkAction" class="filter-select" style="min-width: 200px;">
+                    <option value="">Choose action…</option>
+                    <option value="run_ai">Run AI (selected)</option>
+                    <option value="mark_verified">Mark Verified (selected)</option>
+                    <option value="mark_fake">Mark Fake (selected)</option>
+                    <option value="mark_pending">Mark Pending (selected)</option>
+                </select>
+                <button id="applyBulkBtn" class="btn btn-primary btn-sm">
+                    <i class="fas fa-check"></i> Apply to selected
+                </button>
+                <button id="clearSelBtn" class="btn btn-ghost btn-sm">Clear selection</button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card">
+            <div class="posts-table-wrap">
+                <table class="posts-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 36px;"><input type="checkbox" id="selectAllCheck"></th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Verification</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts %}
+                        <tr data-post-id="{{ post.id }}">
+                            <td><input type="checkbox" class="post-checkbox" value="{{ post.id }}"></td>
+                            <td>
+                                <a href="{% url 'news:post_detail' post.id %}" target="_blank" class="table-title">
+                                    {{ post.title|default:post.content|truncatechars:60 }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if post.is_auto_fetched %}
+                                <span class="table-author" style="color: var(--text-3);">News Bot</span>
+                                {% else %}
+                                <a href="{% url 'accounts:profile' post.author.username %}" class="table-author">@{{ post.author.username }}</a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="table-badge">
+                                    {% if post.is_auto_fetched %}Auto{% elif post.post_type == 'user_news' %}User News{% else %}{{ post.get_post_type_display }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if post.category %}<span class="table-badge">{{ post.category.name }}</span>{% else %}<span style="color: var(--text-3);">—</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="verify-pill verify-{{ post.verification_status }}">
+                                    {% if post.verification_status == 'verified' %}✓ Verified
+                                    {% elif post.verification_status == 'likely_legit' %}Likely
+                                    {% elif post.verification_status == 'pending' %}Pending
+                                    {% elif post.verification_status == 'fake' %}Fake
+                                    {% else %}Unverified{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="score-badge {% if post.verification_score >= 0.7 %}high{% elif post.verification_score >= 0.5 %}medium{% else %}low{% endif %}">
+                                    {% if post.verification_score %}{{ post.verification_score|floatformat:2 }}{% else %}—{% endif %}
+                                </span>
+                            </td>
+                            <td class="table-date">{{ post.created_at|date:"M d" }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn-icon run-ai-btn" data-post-id="{{ post.id }}" title="Run AI">
+                                        <i class="fas fa-robot"></i>
+                                    </button>
+                                    <button class="btn-icon mark-verified-btn" data-post-id="{{ post.id }}" title="Mark verified">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn-icon mark-fake-btn" data-post-id="{{ post.id }}" title="Mark fake">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <a href="{% url 'news:post_detail' post.id %}" target="_blank" class="btn-icon" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" style="padding: 40px; text-align: center;">
+                                <i class="fas fa-inbox" style="font-size: 32px; color: var(--text-3); margin-bottom: 8px;"></i>
+                                <p style="font-size: 13px; color: var(--text-3);">No posts match this filter</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <div class="pager" style="padding: 14px;">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&filter={{ filter_type }}&q={{ search|urlencode }}&category={{ category_id }}&type={{ post_type }}&verification={{ verification }}" class="btn btn-outline btn-sm">Prev</a>
+                {% endif %}
+                <span class="btn btn-outline btn-sm" style="cursor:default;">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&filter={{ filter_type }}&q={{ search|urlencode }}&category={{ category_id }}&type={{ post_type }}&verification={{ verification }}" class="btn btn-outline btn-sm">Next</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-filter"></i> Quick filters</div>
+            <div class="card-body flush">
+                <a href="?filter=all" class="side-link {% if filter_type == 'all' %}active{% endif %}"><i class="fas fa-globe"></i> All Posts <span class="count">{{ stats.total }}</span></a>
+                <a href="?filter=pending" class="side-link {% if filter_type == 'pending' %}active{% endif %}"><i class="fas fa-clock"></i> Pending <span class="count">{{ stats.pending }}</span></a>
+                <a href="?filter=verified" class="side-link {% if filter_type == 'verified' %}active{% endif %}"><i class="fas fa-check-circle"></i> Verified <span class="count">{{ stats.verified }}</span></a>
+                <a href="?filter=likely" class="side-link {% if filter_type == 'likely' %}active{% endif %}"><i class="fas fa-thumbs-up"></i> Likely <span class="count">{{ stats.likely }}</span></a>
+                <a href="?filter=fake" class="side-link {% if filter_type == 'fake' %}active{% endif %}"><i class="fas fa-exclamation-triangle"></i> Fake <span class="count">{{ stats.fake }}</span></a>
+                <div style="border-top: 1px solid var(--border); margin: 6px 8px;"></div>
+                <a href="?filter=user_news" class="side-link {% if filter_type == 'user_news' %}active{% endif %}"><i class="fas fa-user"></i> User News <span class="count">{{ stats.user_news }}</span></a>
+                <a href="?filter=auto_news" class="side-link {% if filter_type == 'auto_news' %}active{% endif %}"><i class="fas fa-robot"></i> Auto News <span class="count">{{ stats.auto_news }}</span></a>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.mini-stats { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+.mini-stats::-webkit-scrollbar { display: none; }
+.mini-stat { flex: 1; min-width: 90px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 8px; text-align: center; text-decoration: none; color: inherit; transition: all .15s; }
+.mini-stat:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.mini-stat.active { border-color: var(--brand); background: var(--brand-soft); }
+.mini-stat-value { font-size: 18px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.mini-stat-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.filters-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.filter-input, .filter-select { padding: 9px 12px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-sm); font-size: 13px; color: var(--text); outline: none; font-family: inherit; }
+.filter-input { flex: 1; min-width: 180px; }
+.filter-input:focus, .filter-select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+
+.posts-table-wrap { overflow-x: auto; }
+.posts-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.posts-table thead th { text-align: left; padding: 10px 12px; background: var(--surface-2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.posts-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-2); }
+.posts-table tbody tr:hover { background: var(--surface-2); }
+.posts-table tbody tr:last-child td { border-bottom: none; }
+
+.post-checkbox, #selectAllCheck {
+    width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer;
+}
+
+.table-title { font-weight: 600; color: var(--text); text-decoration: none; }
+.table-title:hover { color: var(--brand); }
+.table-author { color: var(--brand); text-decoration: none; font-weight: 500; }
+.table-author:hover { text-decoration: underline; }
+
+.table-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; background: var(--surface-2); border-radius: var(--r-full); color: var(--text-2); white-space: nowrap; }
+
+.verify-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: var(--r-full); white-space: nowrap; }
+.verify-pill.verify-verified { background: var(--success-bg); color: var(--success-text); }
+.verify-pill.verify-likely_legit { background: var(--brand-soft); color: var(--brand-dark); }
+.verify-pill.verify-pending { background: var(--warning-bg); color: var(--warning-text); }
+.verify-pill.verify-fake { background: var(--danger-bg); color: var(--danger-text); }
+.verify-pill.verify-unverified { background: var(--surface-2); color: var(--text-3); }
+
+.score-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--r-full); }
+.score-badge.high { background: var(--success-bg); color: var(--success-text); }
+.score-badge.medium { background: var(--warning-bg); color: var(--warning-text); }
+.score-badge.low { background: var(--danger-bg); color: var(--danger-text); }
+
+.table-date { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+.table-actions { display: flex; gap: 4px; }
+.btn-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .15s; text-decoration: none; }
+.btn-icon:hover { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.btn-icon.run-ai-btn:hover { background: var(--brand); color: #fff; }
+.btn-icon.mark-verified-btn:hover { background: var(--success); color: #fff; border-color: var(--success); }
+.btn-icon.mark-fake-btn:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-icon.processing { opacity: .5; pointer-events: none; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+
+    function post(url, data = {}) {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(data)) {
+            if (Array.isArray(v)) {
+                v.forEach(item => fd.append(k, item));
+            } else {
+                fd.append(k, v);
+            }
+        }
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+        }).then(r => r.json());
+    }
+
+    // ============ CHECKBOX SELECTION ============
+    const selectAllCheck = document.getElementById('selectAllCheck');
+    const checkboxes = document.querySelectorAll('.post-checkbox');
+    const bulkBar = document.getElementById('bulkBar');
+    const selectedCount = document.getElementById('selectedCount');
+    const clearSelBtn = document.getElementById('clearSelBtn');
+
+    function updateBulkBar() {
+        const checked = document.querySelectorAll('.post-checkbox:checked').length;
+        selectedCount.textContent = checked;
+        bulkBar.style.display = checked > 0 ? 'block' : 'none';
+    }
+
+    if (selectAllCheck) {
+        selectAllCheck.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateBulkBar();
+        });
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+    if (clearSelBtn) {
+        clearSelBtn.addEventListener('click', function() {
+            checkboxes.forEach(cb => cb.checked = false);
+            if (selectAllCheck) selectAllCheck.checked = false;
+            updateBulkBar();
+        });
+    }
+
+    // ============ BULK ACTION ============
+    const applyBulkBtn = document.getElementById('applyBulkBtn');
+    const bulkActionSel = document.getElementById('bulkAction');
+
+    if (applyBulkBtn) {
+        applyBulkBtn.addEventListener('click', async function() {
+            const action = bulkActionSel.value;
+            if (!action) {
+                showAlert('Choose an action first.', 'Notice');
+                return;
+            }
+            const ids = Array.from(document.querySelectorAll('.post-checkbox:checked')).map(cb => cb.value);
+            if (ids.length === 0) {
+                showAlert('Select at least one post.', 'Notice');
+                return;
+            }
+
+            const ok = await showConfirm(
+                `Apply "${action.replace(/_/g, ' ')}" to ${ids.length} post(s)?`,
+                { title: 'Confirm bulk action', confirmText: 'Apply' }
+            );
+            if (!ok) return;
+
+            applyBulkBtn.disabled = true;
+            applyBulkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…';
+
+            try {
+                const data = await post('{% url "core:admin_bulk_action" %}', {
+                    action: action,
+                    post_ids: ids,
+                });
+                if (data.success) {
+                    showAlert(`Done. ${data.count} post(s) updated.`, 'Success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showAlert(data.error || 'Failed', 'Error');
+                    applyBulkBtn.disabled = false;
+                    applyBulkBtn.innerHTML = '<i class="fas fa-check"></i> Apply to selected';
+                }
+            } catch (e) {
+                showAlert('Something went wrong', 'Error');
+                applyBulkBtn.disabled = false;
+                applyBulkBtn.innerHTML = '<i class="fas fa-check"></i> Apply to selected';
+            }
+        });
+    }
+
+    // ============ SCOPE BULK BUTTONS ============
+    const scopeStatus = document.getElementById('scopeStatus');
+    document.querySelectorAll('.scope-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const action = this.dataset.action;
+            const scope = this.dataset.scope;
+            const labels = {
+                'all_pending': 'all pending posts',
+                'all_user': 'all user-submitted news',
+                'all_auto': 'all auto-fetched news',
+            };
+
+            const ok = await showConfirm(
+                `Run AI verification on ${labels[scope]}? This may take a while.`,
+                { title: 'Confirm', confirmText: 'Run AI' }
+            );
+            if (!ok) return;
+
+            this.disabled = true;
+            const original = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if (scopeStatus) scopeStatus.textContent = 'Running…';
+
+            try {
+                const data = await post('{% url "core:admin_bulk_action" %}', {
+                    action: action,
+                    scope: scope,
+                });
+                if (data.success) {
+                    showAlert(`Verified ${data.count} post(s).`, 'Success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showAlert(data.error || 'Failed', 'Error');
+                    this.disabled = false;
+                    this.innerHTML = original;
+                    if (scopeStatus) scopeStatus.textContent = '';
+                }
+            } catch (e) {
+                showAlert('Something went wrong', 'Error');
+                this.disabled = false;
+                this.innerHTML = original;
+                if (scopeStatus) scopeStatus.textContent = '';
+            }
+        });
+    });
+
+    // ============ SINGLE ROW: RUN AI ============
+    document.querySelectorAll('.run-ai-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.postId;
+            const row = this.closest('tr');
+            this.classList.add('processing');
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const data = await post(`/manage/posts/${id}/run-ai/`);
+                if (data.success) {
+                    const pill = row.querySelector('.verify-pill');
+                    pill.className = 'verify-pill verify-' + data.status;
+                    pill.textContent = {
+                        'verified': '✓ Verified',
+                        'likely_legit': 'Likely',
+                        'pending': 'Pending',
+                        'fake': 'Fake',
+                    }[data.status] || data.status;
+
+                    const scoreEl = row.querySelector('.score-badge');
+                    scoreEl.textContent = data.score.toFixed(2);
+                    scoreEl.className = 'score-badge ' + (data.score >= 0.7 ? 'high' : data.score >= 0.5 ? 'medium' : 'low');
+                }
+            } catch (e) { console.error(e); }
+            finally {
+                this.classList.remove('processing');
+                this.innerHTML = '<i class="fas fa-robot"></i>';
+            }
+        });
+    });
+
+    // ============ SINGLE ROW: MARK STATUS ============
+    function setStatus(btn, status) {
+        const id = btn.dataset.postId;
+        const row = btn.closest('tr');
+        btn.classList.add('processing');
+
+        post(`/manage/posts/${id}/set-verification/`, { status })
+            .then(data => {
+                if (data.success) {
+                    const pill = row.querySelector('.verify-pill');
+                    pill.className = 'verify-pill verify-' + status;
+                    pill.textContent = {
+                        'verified': '✓ Verified',
+                        'likely_legit': 'Likely',
+                        'pending': 'Pending',
+                        'fake': 'Fake',
+                    }[status] || status;
+                }
+            })
+            .catch(console.error)
+            .finally(() => btn.classList.remove('processing'));
+    }
+
+    document.querySelectorAll('.mark-verified-btn').forEach(btn => {
+        btn.addEventListener('click', function() { setStatus(this, 'verified'); });
+    });
+    document.querySelectorAll('.mark-fake-btn').forEach(btn => {
+        btn.addEventListener('click', function() { setStatus(this, 'fake'); });
+    });
+});
+</script>
+{% endblock %}

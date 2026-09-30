@@ -1,0 +1,67 @@
+{# Home page left sidebar content — reused in desktop aside and mobile drawer #}
+
+{# ---------- Nav links ---------- #}
+<div class="drawer-section">
+    <div class="card">
+        <div class="card-body flush">
+            <a href="{% url 'core:home' %}" class="side-link active">
+                <i class="fas fa-house"></i> Home
+            </a>
+            <a href="{% url 'news:online_news' %}" class="side-link">
+                <i class="fas fa-newspaper"></i> News
+            </a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'accounts:profile' user.username %}" class="side-link">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{% url 'socialapp:saved_posts' %}" class="side-link">
+                <i class="fas fa-bookmark"></i> Saved
+                {% if bookmark_count %}<span class="count">{{ bookmark_count }}</span>{% endif %}
+            </a>
+            <a href="{% url 'socialapp:notifications' %}" class="side-link">
+                <i class="fas fa-bell"></i> Notifications
+                {% if notification_count %}<span class="count">{{ notification_count }}</span>{% endif %}
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="side-link">
+                <i class="fas fa-sign-in-alt"></i> Sign in
+            </a>
+            <a href="{% url 'accounts:register' %}" class="side-link">
+                <i class="fas fa-user-plus"></i> Register
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ---------- Admin links (staff only) ---------- #}
+{% if user.is_authenticated and user.is_staff %}
+<div class="drawer-section">
+    <div class="card">
+        <div class="card-head"><i class="fas fa-gauge"></i> Admin</div>
+        <div class="card-body flush">
+            <a href="{% url 'core:admin_dashboard' %}" class="side-link">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="{% url 'core:admin_posts' %}" class="side-link">
+                <i class="fas fa-file-alt"></i> Manage posts
+            </a>
+            <a href="{% url 'core:admin_quick_fetch' %}" class="side-link">
+                <i class="fas fa-bolt"></i> Quick Fetch
+            </a>
+            <a href="{% url 'core:admin_sources' %}" class="side-link">
+                <i class="fas fa-globe"></i> Sources
+            </a>
+            <a href="{% url 'core:admin_ads' %}" class="side-link">
+                <i class="fas fa-bullhorn"></i> Ads
+            </a>
+            <a href="{% url 'core:admin_subscribers' %}" class="side-link">
+                <i class="fas fa-envelope"></i> Subscribers
+            </a>
+            <a href="{% url 'core:admin_settings' %}" class="side-link">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}

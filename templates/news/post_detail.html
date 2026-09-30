@@ -1,0 +1,535 @@
+{% extends 'base.html' %}
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block sidebar_menu %}
+    <div class="drawer-section">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'news:online_news' %}" class="side-link">
+                    <i class="fas fa-arrow-left"></i> All News
+                </a>
+                {% if post.category %}
+                <a href="{% url 'news:category' post.category.slug %}" class="side-link active">
+                    <i class="fas fa-hashtag"></i> {{ post.category.name }}
+                </a>
+                {% endif %}
+                <a href="{% url 'core:home' %}" class="side-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+                <a href="{% url 'core:search' %}" class="side-link">
+                    <i class="fas fa-search"></i> Search
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <aside class="col col-left">
+        <div class="card">
+            <div class="card-body flush">
+                <a href="{% url 'news:online_news' %}" class="side-link">
+                    <i class="fas fa-arrow-left"></i> All News
+                </a>
+                {% if post.category %}
+                <a href="{% url 'news:category' post.category.slug %}" class="side-link active">
+                    <i class="fas fa-hashtag"></i> {{ post.category.name }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+
+    <main class="col col-center">
+        <article class="card">
+            <div class="article-wrap">
+
+                {% if post.category %}
+                <a href="{% url 'news:category' post.category.slug %}" class="article-cat">
+                    {{ post.category.name }}
+                </a>
+                {% endif %}
+
+                <h1 class="article-title">{{ post.title }}</h1>
+
+                <div class="article-meta">
+                    {% if post.external_source %}
+                    <span><i class="fas fa-globe"></i> <strong style="color:var(--text-2);">{{ post.external_source }}</strong></span>
+                    {% else %}
+                    <span><i class="fas fa-user"></i> {{ post.author.username }}</span>
+                    {% endif %}
+                    <span><i class="far fa-clock"></i> {{ post.published_at|date:"M d, Y" }}</span>
+                    <span><i class="fas fa-eye"></i> {{ post.views }} views</span>
+                    {% if post.external_url %}
+                    <a href="{{ post.external_url }}" target="_blank" rel="noopener" style="margin-left:auto;font-weight:600;">
+                        Original source <i class="fas fa-external-link-alt" style="font-size:10px;"></i>
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if post.image or post.image_url %}
+                <img src="{% if post.image %}{{ post.image.url }}{% else %}{{ post.image_url }}{% endif %}"
+                     alt="{{ post.title }}"
+                     style="width:100%;border-radius:var(--r);margin-bottom:24px;"
+                     onerror="this.style.display='none'">
+                {% endif %}
+
+                <div class="article-body">
+                    {% if is_guest %}
+                        {{ preview_content|linebreaks }}
+                        {% if post.content|length > 400 %}
+                        <div class="content-gate">
+                            <div class="content-gate-inner">
+                                <i class="fas fa-lock"></i>
+                                <h3>Sign up to read the full article</h3>
+                                <p>Join Ojukaye for free to keep reading, save articles, and join the conversation.</p>
+                                <div class="content-gate-actions">
+                                    <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-user-plus"></i> Create free account
+                                    </a>
+                                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-outline btn-lg">
+                                        Sign in
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        {{ full_content|linebreaks }}
+                    {% endif %}
+                </div>
+
+                {% if not is_guest %}
+                    {% if media.has_video %}
+                    <section style="margin-top:32px;">
+                        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">
+                            <i class="fas fa-video" style="color:var(--brand);"></i> Video
+                        </h3>
+                        {% for video in media.videos %}
+                            {% if video.type == 'iframe' %}
+                            <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:var(--r);margin-bottom:14px;background:#000;">
+                                <iframe src="{{ video.embed_url }}"
+                                        style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"
+                                        allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
+                                        allowfullscreen loading="lazy"></iframe>
+                            </div>
+                            {% elif video.type == 'video' %}
+                            <video controls preload="metadata" style="width:100%;border-radius:var(--r);margin-bottom:14px;">
+                                <source src="{{ video.url }}">
+                            </video>
+                            {% else %}
+                            <p style="margin-bottom:14px;">
+                                <a href="{{ video.watch_url }}" target="_blank" rel="noopener">
+                                    Watch on {{ video.platform }}
+                                </a>
+                            </p>
+                            {% endif %}
+                        {% endfor %}
+                    </section>
+                    {% endif %}
+
+                    {% if media.has_audio %}
+                    <section style="margin-top:32px;">
+                        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">
+                            <i class="fas fa-headphones" style="color:var(--brand);"></i> Audio
+                        </h3>
+                        {% for audio in media.audios %}
+                            {% if audio.type == 'iframe' %}
+                            <div style="margin-bottom:14px;">
+                                <iframe src="{{ audio.embed_url }}" width="100%" height="80"
+                                        frameborder="0" allow="encrypted-media" loading="lazy"
+                                        style="border-radius:var(--r);"></iframe>
+                            </div>
+                            {% elif audio.type == 'audio' %}
+                            <audio controls preload="metadata" style="width:100%;margin-bottom:14px;">
+                                <source src="{{ audio.url }}">
+                            </audio>
+                            {% else %}
+                            <p style="margin-bottom:14px;">
+                                <a href="{{ audio.watch_url }}" target="_blank" rel="noopener">
+                                    Listen on {{ audio.platform }}
+                                </a>
+                            </p>
+                            {% endif %}
+                        {% endfor %}
+                    </section>
+                    {% endif %}
+                {% endif %}
+
+            </div>
+        </article>
+
+        {% if is_guest %}
+        <div class="card" style="margin-top:14px;">
+            <div class="card-body" style="text-align: center; padding: 24px;">
+                <i class="fas fa-heart" style="font-size: 28px; color: var(--text-3); margin-bottom: 10px;"></i>
+                <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Join the conversation</h3>
+                <p style="font-size: 13px; color: var(--text-3); margin-bottom: 16px;">
+                    Sign in to like, comment, and save articles.
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <a href="{% url 'accounts:register' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Create account
+                    </a>
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-outline">
+                        Sign in
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="margin-top:14px;">
+            <div class="post-actions-bar" id="postActionsBar"
+                 data-post-id="{{ post.id }}"
+                 data-authenticated="true">
+
+                <button class="action-btn {% if user in post.likes.all %}active liked{% endif %}" id="likeBtn">
+                    <i class="{% if user in post.likes.all %}fas{% else %}far{% endif %} fa-heart"></i>
+                    <span id="likeCount">{{ post.likes.count }}</span>
+                    <span class="action-label">Like</span>
+                </button>
+
+                <a href="#comments" class="action-btn">
+                    <i class="far fa-comment"></i>
+                    <span>{{ post.comments_count }}</span>
+                    <span class="action-label">Comment</span>
+                </a>
+
+                <button class="action-btn {% if user in post.bookmarks.all %}active bookmarked{% endif %}" id="bookmarkBtn">
+                    <i class="{% if user in post.bookmarks.all %}fas{% else %}far{% endif %} fa-bookmark"></i>
+                    <span class="action-label">Save</span>
+                </button>
+
+                <button class="action-btn" id="shareBtn"
+                        data-url="{{ request.build_absolute_uri }}"
+                        data-title="{{ post.title }}"
+                        data-excerpt="{{ post.content|truncatechars:120|escapejs }}"
+                        data-image="{% if post.image %}{{ post.image.url }}{% elif post.image_url %}{{ post.image_url }}{% endif %}"
+                        data-staff="{% if user.is_staff %}true{% else %}false{% endif %}">
+                    <i class="far fa-share-square"></i>
+                    <span class="action-label">Share</span>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not is_guest %}
+        <div class="card" id="comments" style="margin-top:14px;">
+            <div class="card-head" style="justify-content: space-between;">
+                <span><i class="fas fa-comments"></i> Comments (<span id="commentTotal">{{ post.comments_count }}</span>)</span>
+                <select id="commentSort" style="font-size: 12px; padding: 4px 8px; border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--r-sm); color: var(--text-2); outline: none;">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="top">Top</option>
+                </select>
+            </div>
+            <div class="card-body">
+
+                {% if user.is_authenticated %}
+                <div class="comment-form-wrap">
+                    <div class="comment-avatar">
+                        {% if user.profile.profile_pic %}
+                        <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}">
+                        {% else %}
+                        {{ user.username|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div style="flex: 1;">
+                        <textarea id="commentInput" class="comment-input"
+                                  placeholder="Add a comment…" rows="2" maxlength="1000"></textarea>
+                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 8px;">
+                            <span style="font-size: 11.5px; color: var(--text-3);">
+                                <span id="commentCount">0</span>/1000
+                            </span>
+                            <button class="btn btn-primary btn-sm" id="commentSubmit">
+                                <i class="fas fa-paper-plane"></i> Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div id="commentList">
+                    {% for comment in comments %}
+                        {% include 'social/_comment.html' with comment=comment %}
+                    {% empty %}
+                    <div id="noComments" style="padding: 24px; text-align: center; font-size: 13px; color: var(--text-3);">
+                        No comments yet. Be the first!
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if related_posts %}
+        <section style="margin-top:20px;">
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;padding-left:4px;">Related</h3>
+            <div class="related-grid">
+                {% for rp in related_posts %}
+                <a href="{% url 'news:post_detail' rp.id %}" class="card" style="color:inherit;">
+                    {% if rp.image_url %}
+                    <img src="{{ rp.image_url }}" alt="" style="width:100%;height:120px;object-fit:cover;" onerror="this.style.display='none'">
+                    {% endif %}
+                    <div style="padding:12px 14px;">
+                        <h4 style="font-size:13.5px;font-weight:600;line-height:1.35;">{{ rp.title|truncatechars:70 }}</h4>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <aside class="col col-right">
+        <div class="card">
+            <div class="card-head"><i class="fas fa-circle-info"></i> Source</div>
+            <div class="card-body" style="font-size:13px;color:var(--text-2);">
+                <p style="margin-bottom:8px;">
+                    <strong style="color:var(--text);">Published by</strong><br>
+                    {% if post.external_source %}{{ post.external_source }}{% else %}Ojukaye{% endif %}
+                </p>
+                {% if post.external_url %}
+                <p style="margin-bottom:8px;">
+                    <strong style="color:var(--text);">Original link</strong><br>
+                    <a href="{{ post.external_url }}" target="_blank" rel="noopener" style="word-break:break-all;">
+                        {{ post.external_url|truncatechars:42 }}
+                    </a>
+                </p>
+                {% endif %}
+                <p>
+                    <strong style="color:var(--text);">Published</strong><br>
+                    {{ post.published_at|date:"F d, Y · H:i" }}
+                </p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<nav class="mobile-nav">
+    <a href="{% url 'core:home' %}"><i class="fas fa-house"></i><span>Home</span></a>
+    <a href="{% url 'news:online_news' %}"><i class="fas fa-newspaper"></i><span>News</span></a>
+    <a href="{% url 'news:online_news' %}?sort=trending"><i class="fas fa-fire"></i><span>Trending</span></a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'accounts:profile' user.username %}"><i class="fas fa-user"></i><span>Profile</span></a>
+    {% else %}
+    <a href="{% url 'accounts:login' %}"><i class="fas fa-user"></i><span>Sign in</span></a>
+    {% endif %}
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.post-actions-bar { display: flex; padding: 6px; gap: 4px; }
+.action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 10px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all .15s;
+    font-family: inherit;
+    text-decoration: none;
+}
+.action-btn i { font-size: 15px; }
+.action-btn:hover { background: var(--surface-2); color: var(--text); }
+.action-btn.liked { color: var(--danger); }
+.action-btn.liked i { color: var(--danger); }
+.action-btn.liked:hover { background: var(--danger-bg); }
+.action-btn.bookmarked { color: var(--warning); }
+.action-btn.bookmarked i { color: var(--warning); }
+.action-btn.bookmarked:hover { background: var(--warning-bg); }
+.action-btn.processing { opacity: .6; pointer-events: none; }
+@media (max-width: 560px) {
+    .action-label { display: none; }
+    .action-btn { padding: 12px 6px; gap: 6px; }
+}
+.comment-form-wrap {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bar = document.getElementById('postActionsBar');
+    if (!bar) return;
+
+    const postId = bar.dataset.postId;
+    const csrfToken = '{{ csrf_token }}';
+
+    const likeBtn = document.getElementById('likeBtn');
+    const likeCount = document.getElementById('likeCount');
+    if (likeBtn) {
+        likeBtn.addEventListener('click', async function() {
+            likeBtn.classList.add('processing');
+            try {
+                const res = await fetch(`/social/post/${postId}/like/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const icon = likeBtn.querySelector('i');
+                    if (data.liked) {
+                        icon.className = 'fas fa-heart';
+                        likeBtn.classList.add('liked', 'active');
+                    } else {
+                        icon.className = 'far fa-heart';
+                        likeBtn.classList.remove('liked', 'active');
+                    }
+                    likeCount.textContent = data.like_count;
+                }
+            } catch (e) { console.error(e); }
+            finally { likeBtn.classList.remove('processing'); }
+        });
+    }
+
+    const bookmarkBtn = document.getElementById('bookmarkBtn');
+    if (bookmarkBtn) {
+        bookmarkBtn.addEventListener('click', async function() {
+            bookmarkBtn.classList.add('processing');
+            try {
+                const res = await fetch(`/social/post/${postId}/bookmark/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const icon = bookmarkBtn.querySelector('i');
+                    if (data.bookmarked) {
+                        icon.className = 'fas fa-bookmark';
+                        bookmarkBtn.classList.add('bookmarked', 'active');
+                    } else {
+                        icon.className = 'far fa-bookmark';
+                        bookmarkBtn.classList.remove('bookmarked', 'active');
+                    }
+                }
+            } catch (e) { console.error(e); }
+            finally { bookmarkBtn.classList.remove('processing'); }
+        });
+    }
+
+    const shareBtn = document.getElementById('shareBtn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', function() {
+            const url = shareBtn.dataset.url;
+            const title = shareBtn.dataset.title;
+            const excerpt = shareBtn.dataset.excerpt || '';
+            const isStaff = shareBtn.dataset.staff === 'true';
+
+            fetch(`/social/post/${postId}/share/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            }).catch(() => {});
+
+            if (navigator.share && !isStaff) {
+                navigator.share({ title, text: excerpt, url }).catch(() => {});
+                return;
+            }
+            openShareModal({ url, title, excerpt, isStaff });
+        });
+    }
+
+    function openShareModal(data) {
+        document.querySelectorAll('.share-modal-backdrop').forEach(m => m.remove());
+        const { url, title, excerpt, isStaff } = data;
+        const enc = encodeURIComponent;
+        const eUrl = enc(url);
+        const eTitle = enc(title);
+        const eText = enc((excerpt || title) + ' — ' + url);
+
+        const platforms = [
+            { label: 'Facebook', color: '#1877f2', icon: 'fab fa-facebook-f', href: `https://www.facebook.com/sharer/sharer.php?u=${eUrl}` },
+            { label: 'X', color: '#000000', icon: 'fab fa-x-twitter', href: `https://twitter.com/intent/tweet?url=${eUrl}&text=${eTitle}` },
+            { label: 'WhatsApp', color: '#25d366', icon: 'fab fa-whatsapp', href: `https://wa.me/?text=${eText}` },
+            { label: 'Telegram', color: '#0088cc', icon: 'fab fa-telegram', href: `https://t.me/share/url?url=${eUrl}&text=${eTitle}` },
+            { label: 'LinkedIn', color: '#0a66c2', icon: 'fab fa-linkedin-in', href: `https://www.linkedin.com/sharing/share-offsite/?url=${eUrl}` },
+            { label: 'Reddit', color: '#ff4500', icon: 'fab fa-reddit-alien', href: `https://www.reddit.com/submit?url=${eUrl}&title=${eTitle}` },
+            { label: 'Email', color: '#6b7280', icon: 'fas fa-envelope', href: `mailto:?subject=${eTitle}&body=${eText}` },
+        ];
+
+        const platformHtml = platforms.map(p => `
+            <a class="share-plat" href="${p.href}" target="_blank" rel="noopener" style="--c: ${p.color};">
+                <i class="${p.icon}"></i>
+                <span>${p.label}</span>
+            </a>
+        `).join('');
+
+        const modal = `
+            <div class="share-modal-backdrop">
+                <div class="share-modal">
+                    <div class="share-modal-head">
+                        <h3>Share this post</h3>
+                        <button class="share-modal-close" type="button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="share-modal-body">
+                        <div class="share-section">
+                            <div class="share-section-title">
+                                <i class="fas fa-share-nodes"></i> Share to your socials
+                            </div>
+                            <div class="share-grid">${platformHtml}</div>
+                        </div>
+                        <div class="share-section">
+                            <div class="share-section-title">
+                                <i class="fas fa-link"></i> Copy link
+                            </div>
+                            <div class="share-copy-row">
+                                <input type="text" id="shareUrlInput" value="${url}" readonly>
+                                <button class="btn btn-primary btn-sm" id="shareCopyBtn" type="button">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modal);
+        const backdrop = document.querySelector('.share-modal-backdrop');
+        const closeBtn = document.querySelector('.share-modal-close');
+        const copyBtn = document.getElementById('shareCopyBtn');
+        const urlInput = document.getElementById('shareUrlInput');
+
+        closeBtn.addEventListener('click', () => backdrop.remove());
+        backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.remove(); });
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') {
+                backdrop.remove();
+                document.removeEventListener('keydown', esc);
+            }
+        });
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(urlInput.value);
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied';
+                setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 1500);
+            } catch (e) {
+                urlInput.select();
+                document.execCommand('copy');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

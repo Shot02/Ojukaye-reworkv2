@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ojukaye NewsAi Banner</title>
+<style>
+    body { margin: 0; padding: 40px; background: #f0f0f0; font-family: 'Inter', -apple-system, sans-serif; }
+    .banner {
+        width: 1500px;
+        height: 500px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .banner-logo {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .banner-title {
+        font-size: 96px;
+        font-weight: 800;
+        color: #2563eb;
+        letter-spacing: -0.03em;
+        margin: 0;
+        line-height: 1;
+    }
+    .banner-subtitle {
+        font-size: 24px;
+        font-weight: 500;
+        color: #6b7280;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin: 0;
+    }
+    .banner-dot { color: #1e40af; }
+</style>
+</head>
+<body>
+    <div class="banner" id="banner">
+        <img src="/static/images/logo.jpeg" alt="" class="banner-logo" onerror="this.style.display='none'">
+        <h1 class="banner-title">Ojukaye NewsAi<span class="banner-dot">.</span></h1>
+        <p class="banner-subtitle">Automated News • Verified with AI</p>
+    </div>
+
+    <p style="font-family: monospace; margin-top: 30px; color: #666;">
+        Screenshot the white box above → save as <strong>newsbot_banner.jpg</strong> in
+        <code>static/images/</code>. Size: 1500×500.
+    </p>
+</body>
+</html>
