@@ -1,11 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Online News{% endblock %}
 
-{# ================================================================
-   MOBILE DRAWER CONTENT
-   These blocks render inside the nav drawer on mobile only.
-   On desktop, the drawer is hidden and these blocks are ignored.
-   ================================================================ #}
 {% block sidebar_menu %}
     {% include 'includes/_news_left_sidebar.html' %}
 {% endblock %}
@@ -14,15 +9,13 @@
     {% include 'includes/_news_right_extras.html' %}
 {% endblock %}
 
-
 {% block body %}
 <div class="app">
 
-    <!-- ============ LEFT SIDEBAR (desktop only, hidden on mobile) ============ -->
+    <!-- ============ LEFT SIDEBAR ============ -->
     <aside class="col col-left">
         {% include 'includes/_news_left_sidebar.html' %}
 
-        <!-- LEFT SIDEBAR AD (kept on desktop) -->
         {% if sidebar_ads %}
         {% with sidebar_ads.0 as ad %}
         <div class="card ad-card" data-ad-id="{{ ad.uuid }}">
@@ -185,7 +178,7 @@
                             <span><i class="far fa-share-square"></i> {{ post.shares|default:0 }}</span>
                             {% if post.video %}
                             <span class="media-flag"><i class="fas fa-video"></i> Video</span>
-                            {% if post.has_media %}
+                            {% elif post.has_media %}
                             <span class="media-flag"><i class="fas fa-play-circle"></i> Media</span>
                             {% endif %}
                         </div>
@@ -233,7 +226,7 @@
 
     </main>
 
-    <!-- ============ RIGHT SIDEBAR (desktop only, hidden on mobile) ============ -->
+    <!-- ============ RIGHT SIDEBAR ============ -->
     <aside class="col col-right">
 
         {% if fetcher_stats %}
@@ -267,7 +260,6 @@
         </div>
         {% endif %}
 
-        <!-- SIDEBAR AD 1 -->
         {% if sidebar_ads %}
         {% with sidebar_ads.0 as ad %}
         {% if ad %}
@@ -303,7 +295,6 @@
 
         {% include 'includes/_news_right_extras.html' %}
 
-        <!-- SIDEBAR AD 2 -->
         {% if sidebar_ads|length > 1 %}
         {% with sidebar_ads.1 as ad %}
         <div class="card ad-card" data-ad-id="{{ ad.uuid }}">
@@ -362,7 +353,6 @@
 
 </div>
 
-<!-- Mobile bottom nav -->
 <nav class="mobile-nav">
     <a href="{% url 'core:home' %}"><i class="fas fa-house"></i><span>Home</span></a>
     <a href="{% url 'news:online_news' %}" class="active"><i class="fas fa-newspaper"></i><span>News</span></a>
@@ -378,14 +368,8 @@
 {% block extra_css %}
 <style>
 /* ============ AD CARDS ============ */
-.ad-card {
-    border: 1px solid var(--brand);
-    position: relative;
-}
-.ad-card .card-head {
-    background: var(--brand-soft);
-    color: var(--brand-dark);
-}
+.ad-card { border: 1px solid var(--brand); position: relative; }
+.ad-card .card-head { background: var(--brand-soft); color: var(--brand-dark); }
 .ad-label {
     margin-left: auto;
     font-size: 9.5px;
@@ -397,12 +381,7 @@
     text-transform: uppercase;
     letter-spacing: .05em;
 }
-.ad-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    transition: opacity .15s;
-}
+.ad-link { text-decoration: none; color: inherit; display: block; transition: opacity .15s; }
 .ad-link:hover { opacity: .92; }
 
 /* ============ BANNER SLIDER ============ */
@@ -414,33 +393,12 @@
     background: #0f172a;
     height: 260px;
 }
-.banner-track {
-    display: flex;
-    height: 100%;
-    transition: transform .5s ease;
-    will-change: transform;
-}
-.banner-slide {
-    flex: 0 0 100%;
-    height: 100%;
-    position: relative;
-    display: block;
-    color: #fff;
-    text-decoration: none;
-}
-.banner-image {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-}
-.banner-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+.banner-track { display: flex; height: 100%; transition: transform .5s ease; will-change: transform; }
+.banner-slide { flex: 0 0 100%; height: 100%; position: relative; display: block; color: #fff; text-decoration: none; }
+.banner-image { position: absolute; inset: 0; background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.banner-image img { width: 100%; height: 100%; object-fit: cover; }
 .banner-overlay {
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.35) 55%, transparent 100%);
     padding: 24px;
     display: flex;
@@ -460,20 +418,8 @@
     margin-bottom: 10px;
 }
 .banner-cat.sponsored { background: #f59e0b; }
-.banner-title {
-    font-size: 20px;
-    font-weight: 800;
-    line-height: 1.25;
-    color: #fff;
-    margin-bottom: 6px;
-    max-width: 700px;
-}
-.banner-excerpt {
-    font-size: 13px;
-    opacity: .85;
-    max-width: 600px;
-    line-height: 1.5;
-}
+.banner-title { font-size: 20px; font-weight: 800; line-height: 1.25; color: #fff; margin-bottom: 6px; max-width: 700px; }
+.banner-excerpt { font-size: 13px; opacity: .85; max-width: 600px; line-height: 1.5; }
 .banner-cta {
     font-size: 12.5px;
     font-weight: 700;
@@ -487,77 +433,62 @@
     align-self: flex-start;
 }
 .banner-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.85);
-    color: #111827;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    transition: all .15s;
-    z-index: 5;
-    backdrop-filter: blur(6px);
-    opacity: 0;
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,.85); color: #111827;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; transition: all .15s; z-index: 5;
+    backdrop-filter: blur(6px); opacity: 0;
 }
 .banner-slider:hover .banner-nav { opacity: 1; }
 .banner-nav:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
 .banner-prev { left: 12px; }
 .banner-next { right: 12px; }
-.banner-dots {
-    position: absolute;
-    bottom: 12px;
-    right: 16px;
-    display: flex;
-    gap: 6px;
-    z-index: 5;
-}
+.banner-dots { position: absolute; bottom: 12px; right: 16px; display: flex; gap: 6px; z-index: 5; }
 .banner-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.45);
-    border: none;
-    cursor: pointer;
-    transition: all .2s;
-    padding: 0;
+    width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.45);
+    border: none; cursor: pointer; transition: all .2s; padding: 0;
 }
-.banner-dot.active {
-    background: #fff;
-    width: 24px;
-    border-radius: 4px;
-}
+.banner-dot.active { background: #fff; width: 24px; border-radius: 4px; }
 
-/* ============ BADGES / MISC ============ */
+/* ============ BADGES ============ */
 .badge-verified {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 7px;
-    background: var(--success-bg);
-    color: var(--success-text);
-    border-radius: var(--r-full);
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    background: var(--success-bg); color: var(--success-text); border-radius: var(--r-full);
 }
 .badge-pending {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 7px;
-    background: var(--warning-bg);
-    color: var(--warning-text);
-    border-radius: var(--r-full);
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    background: var(--warning-bg); color: var(--warning-text); border-radius: var(--r-full);
 }
-.stat-mini-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12.5px;
-    padding: 5px 0;
-}
+.stat-mini-row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; }
 .stat-mini-row strong { color: var(--text); }
+
+/* ============ FEED TABS ============ */
+.feed-tabs {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+.feed-tab {
+    flex: 1; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px 12px;
+    font-size: 14px; font-weight: 600;
+    color: var(--text-2);
+    transition: background .15s, color .15s;
+    text-decoration: none;
+}
+.feed-tab:hover { background: var(--surface-2); color: var(--text); }
+.feed-tab.active { color: var(--text); font-weight: 700; }
+.feed-tab.active::after {
+    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 64px; height: 3px; background: var(--brand); border-radius: 3px 3px 0 0;
+}
+.feed-tab + .feed-tab { border-left: 1px solid var(--border); }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 820px) {
@@ -570,85 +501,126 @@
 @media (max-width: 560px) {
     .banner-slider { height: 180px; }
     .banner-title { font-size: 15px; }
+    .feed-tab { padding: 14px 8px; font-size: 13.5px; }
+    .feed-tab.active::after { width: 50px; }
 }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// ============ AD TRACKING ============
-function trackAdImpression(adId) {
-    fetch(`/api/track-ad-impression/${adId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-    }).catch(() => {});
-}
-function trackAdClick(adId) {
-    fetch(`/api/track-ad-click/${adId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-    }).catch(() => {});
-}
+// ============ AD TRACKING (global, defined early) ============
+window.trackAdImpression = function(adId) {
+    if (!adId) return;
+    try {
+        fetch(`/api/track-ad-impression/${adId}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        }).catch(() => {});
+    } catch (e) {}
+};
+window.trackAdClick = function(adId) {
+    if (!adId) return;
+    try {
+        fetch(`/api/track-ad-click/${adId}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        }).catch(() => {});
+    } catch (e) {}
+};
 
-// ============ BANNER SLIDER ============
-document.addEventListener('DOMContentLoaded', function() {
-    const track = document.getElementById('bannerTrack');
-    const dots = document.querySelectorAll('.banner-dot');
-    if (!track || dots.length === 0) return;
+// ============ BANNER SLIDER (robust) ============
+(function() {
+    'use strict';
 
-    let current = 0;
-    const total = dots.length;
-    let timer;
+    function initBannerSlider() {
+        const slider = document.getElementById('bannerSlider');
+        const track = document.getElementById('bannerTrack');
+        const dots = document.querySelectorAll('.banner-dot');
+        const prevBtn = document.getElementById('bannerPrev');
+        const nextBtn = document.getElementById('bannerNext');
 
-    function go(i) {
-        current = (i + total) % total;
-        track.style.transform = `translateX(-${current * 100}%)`;
-        dots.forEach((d, idx) => d.classList.toggle('active', idx === current));
-    }
-    function next() { go(current + 1); }
-    function prev() { go(current - 1); }
-    function start() { if (total > 1) timer = setInterval(next, 6000); }
-    function stop() { clearInterval(timer); }
-    function reset() { stop(); start(); }
+        if (!slider || !track) return;
 
-    dots.forEach(d => {
-        d.addEventListener('click', function(e) {
-            e.preventDefault();
-            go(parseInt(this.dataset.index));
-            reset();
+        const total = dots.length;
+
+        if (total <= 1) {
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+            const dotsWrap = document.getElementById('bannerDots');
+            if (dotsWrap) dotsWrap.style.display = 'none';
+            return;
+        }
+
+        let current = 0;
+        let timer = null;
+        const INTERVAL_MS = 6000;
+
+        function go(i) {
+            current = ((i % total) + total) % total;
+            track.style.transform = `translateX(-${current * 100}%)`;
+            dots.forEach((d, idx) => d.classList.toggle('active', idx === current));
+        }
+        function next() { go(current + 1); }
+        function prev() { go(current - 1); }
+        function start() { stop(); if (total > 1) timer = setInterval(next, INTERVAL_MS); }
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        function reset() { stop(); start(); }
+
+        dots.forEach(d => {
+            d.addEventListener('click', function(e) {
+                e.preventDefault();
+                go(parseInt(this.dataset.index, 10) || 0);
+                reset();
+            });
         });
-    });
 
-    const prevBtn = document.getElementById('bannerPrev');
-    const nextBtn = document.getElementById('bannerNext');
-    if (prevBtn) prevBtn.addEventListener('click', function(e) { e.preventDefault(); prev(); reset(); });
-    if (nextBtn) nextBtn.addEventListener('click', function(e) { e.preventDefault(); next(); reset(); });
+        if (prevBtn) prevBtn.addEventListener('click', function(e) { e.preventDefault(); prev(); reset(); });
+        if (nextBtn) nextBtn.addEventListener('click', function(e) { e.preventDefault(); next(); reset(); });
 
-    const slider = document.getElementById('bannerSlider');
-    if (slider) {
         slider.addEventListener('mouseenter', stop);
         slider.addEventListener('mouseleave', start);
-    }
 
-    let touchStartX = 0, touchDeltaX = 0;
-    if (slider) {
-        slider.addEventListener('touchstart', e => {
+        let touchStartX = 0, touchDeltaX = 0, isTouching = false;
+        slider.addEventListener('touchstart', function(e) {
+            isTouching = true;
             touchStartX = e.touches[0].clientX;
             touchDeltaX = 0;
             stop();
         }, { passive: true });
-        slider.addEventListener('touchmove', e => {
+        slider.addEventListener('touchmove', function(e) {
+            if (!isTouching) return;
             touchDeltaX = e.touches[0].clientX - touchStartX;
         }, { passive: true });
-        slider.addEventListener('touchend', () => {
+        slider.addEventListener('touchend', function() {
+            if (!isTouching) return;
+            isTouching = false;
             if (Math.abs(touchDeltaX) > 50) {
-                touchDeltaX < 0 ? next() : prev();
+                if (touchDeltaX < 0) next(); else prev();
             }
             start();
         });
+
+        slider.setAttribute('tabindex', '0');
+        slider.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); reset(); }
+            if (e.key === 'ArrowRight') { e.preventDefault(); next(); reset(); }
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) stop();
+            else start();
+        });
+
+        go(0);
+        start();
     }
 
-    start();
-});
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initBannerSlider);
+    } else {
+        initBannerSlider();
+    }
+})();
 </script>
 {% endblock %}
