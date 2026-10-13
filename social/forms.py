@@ -6,7 +6,7 @@ class DiscussionForm(forms.ModelForm):
     """Free-form social post."""
     class Meta:
         model = Post
-        fields = ['title', 'content', 'category', 'image']
+        fields = ['title', 'content', 'category', 'image', 'video']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Give it a title (optional)',
@@ -19,6 +19,7 @@ class DiscussionForm(forms.ModelForm):
             }),
             'category': forms.Select(attrs={}),
             'image': forms.FileInput(attrs={}),
+            'video': forms.FileInput(attrs={'accept': 'video/mp4,video/webm,video/quicktime'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -27,8 +28,8 @@ class DiscussionForm(forms.ModelForm):
         self.fields['category'].required = False
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
         self.fields['category'].empty_label = '-- No category --'
-        # Image upload field – not a model field, we handle it manually
         self.fields['image'].required = False
+        self.fields['video'].required = False
 
 
 class NewsSubmissionForm(forms.ModelForm):
@@ -39,6 +40,14 @@ class NewsSubmissionForm(forms.ModelForm):
             'placeholder': 'https://example.com/article',
         }),
         help_text="The original article link. AI will verify it.",
+    )
+
+    video_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'placeholder': 'https://www.youtube.com/watch?v=...',
+        }),
+        help_text="Optional. Paste a YouTube, Vimeo, or direct video link.",
     )
 
     class Meta:
@@ -75,6 +84,15 @@ class NewsSubmissionForm(forms.ModelForm):
             raise forms.ValidationError('Source URL is required for news posts.')
         return url
 
+    def clean_video_url(self):
+        """Optional field, but if provided, must be a valid http(s) URL."""
+        url = (self.cleaned_data.get('video_url') or '').strip()
+        if not url:
+            return ''
+        if not url.startswith(('http://', 'https://')):
+            raise forms.ValidationError('Video URL must start with http:// or https://')
+        return url
+
     def clean(self):
         cleaned = super().clean()
         content = cleaned.get('content', '') or ''
@@ -87,7 +105,7 @@ class ProfilePostForm(forms.ModelForm):
     """Personal profile-only post."""
     class Meta:
         model = Post
-        fields = ['content', 'image']
+        fields = ['content', 'image', 'video']
         widgets = {
             'content': forms.Textarea(attrs={
                 'placeholder': "What's on your mind? (visible only on your profile)",
@@ -95,8 +113,10 @@ class ProfilePostForm(forms.ModelForm):
                 'maxlength': 3000,
             }),
             'image': forms.FileInput(attrs={}),
+            'video': forms.FileInput(attrs={'accept': 'video/mp4,video/webm,video/quicktime'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['image'].required = False
+        self.fields['video'].required = False

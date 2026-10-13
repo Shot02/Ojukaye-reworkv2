@@ -183,6 +183,8 @@
                             <span><i class="far fa-comment"></i> {{ post.comments_count }}</span>
                             <span><i class="far fa-bookmark"></i> {{ post.bookmarks.count }}</span>
                             <span><i class="far fa-share-square"></i> {{ post.shares|default:0 }}</span>
+                            {% if post.video %}
+                            <span class="media-flag"><i class="fas fa-video"></i> Video</span>
                             {% if post.has_media %}
                             <span class="media-flag"><i class="fas fa-play-circle"></i> Media</span>
                             {% endif %}

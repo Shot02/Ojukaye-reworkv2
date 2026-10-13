@@ -134,7 +134,22 @@
                     <label class="field-label">Source name <span style="color: var(--text-3);">(optional)</span></label>
                     {{ form.source_name }}
                 </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">
+                        Video URL <span style="color: var(--text-3);">(optional)</span>
+                    </label>
+                    {{ form.video_url }}
+                    <p style="font-size: 11.5px; color: var(--text-3); margin-top: 4px;">
+                        <i class="fas fa-play-circle"></i>
+                        Paste a YouTube, Vimeo, or direct video link. It'll be embedded on the post page.
+                    </p>
+                    {% if form.video_url.errors %}
+                    <p style="font-size: 11.5px; color: var(--danger); margin-top: 4px;">{{ form.video_url.errors.0 }}</p>
+                    {% endif %}
+                </div>
                 {% endif %}
+
 
                 <!-- CONTENT -->
                 <div style="margin-bottom: 16px;">
@@ -181,6 +196,24 @@
                         </div>
                     </div>
                 </div>
+                {% if post_type != 'news' %}
+                <div style="margin-bottom: 16px;">
+                    <label class="field-label">Video <span style="color: var(--text-3);">(optional)</span></label>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div id="videoPreview" style="width: 80px; height: 80px; border-radius: var(--r); overflow: hidden; background: var(--surface-2); border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; color: var(--text-3); flex-shrink: 0;">
+                            <i class="fas fa-video" style="font-size: 20px;"></i>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <label for="{{ form.video.id_for_label }}" class="btn btn-outline btn-sm" style="cursor: pointer;">
+                                <i class="fas fa-upload"></i> Choose video
+                            </label>
+                            {{ form.video }}
+                            <p style="font-size: 11px; color: var(--text-3); margin-top: 4px;">MP4, WebM, MOV · max 100MB</p>
+                            <p id="videoFileName" style="font-size: 11.5px; color: var(--brand); margin-top: 4px;"></p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
             </div>
 
@@ -209,6 +242,9 @@
                     • High credibility → auto-published<br>
                     • Medium → admin reviews<br>
                     • Low → auto-rejected
+                </p>
+                <p style="margin-bottom: 8px;">
+                    <strong style="color: var(--text);">Video URL</strong> is optional. Paste a YouTube, Vimeo, or direct MP4 link — it'll be embedded.
                 </p>
                 <p style="margin: 0; color: var(--text-3);">You'll be notified of the outcome.</p>
                 {% elif post_type == 'profile' %}
@@ -290,7 +326,44 @@ document.addEventListener('DOMContentLoaded', function() {
         contentField.addEventListener('input', update);
         update();
     }
+// Video preview + file name
+const videoInput = document.getElementById('{{ form.video.id_for_label }}');
+const videoPreview = document.getElementById('videoPreview');
+const videoFileName = document.getElementById('videoFileName');
 
+    if (videoInput && videoPreview) {
+        videoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) {
+                videoPreview.innerHTML = '<i class="fas fa-video" style="font-size: 20px;"></i>';
+                if (videoFileName) videoFileName.textContent = '';
+                return;
+            }
+
+            // Show file size
+            const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+            if (videoFileName) videoFileName.textContent = `${file.name} · ${sizeMB}MB`;
+
+            // Show video thumbnail preview
+            const url = URL.createObjectURL(file);
+            const video = document.createElement('video');
+            video.src = url;
+            video.muted = true;
+            video.preload = 'metadata';
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.objectFit = 'cover';
+
+            video.addEventListener('loadedmetadata', () => {
+                video.currentTime = 0.5;  // seek to 0.5s for a thumbnail frame
+            });
+            video.addEventListener('seeked', () => {
+                videoPreview.innerHTML = '';
+                videoPreview.appendChild(video);
+                videoPreview.style.border = '1px solid var(--border)';
+            });
+        });
+    }
     // Image preview
     const imageInput = document.getElementById('{{ form.image.id_for_label }}');
     const imagePreview = document.getElementById('imagePreview');

@@ -30,7 +30,6 @@ ENV/
 *.log
 db.sqlite3
 db.sqlite3-journal
-/media/
 /staticfiles/
 .env
 .env.*
@@ -51,3 +50,12 @@ client_secret_*.json
 
 # ==================== OS ====================
 Thumbs.db
+
+# ==================== MEDIA / UPLOADS ====================
+/media/
+/media/post_images/
+/media/post_videos/
+/media/profile_pics/
+/media/cover_photos/
+/media/comment_images/
+/media/ads/

@@ -227,6 +227,13 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 
+# ==================== MEDIA / VIDEO ====================
+# Hard cap on request body — Django rejects anything over this
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024   # 100 MB
+
+# Files over this size stream to a temp file instead of RAM
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  
+
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 

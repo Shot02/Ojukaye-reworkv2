@@ -76,10 +76,16 @@ def _handle_submission(request, post_type):
         if post_type == 'news':
             post.post_type = 'user_news'
             post.is_news_submission = True
-            post.status = 'draft'  # will become published if verified
+            post.status = 'draft'
             post.submission_status = 'pending'
             post.external_url = post.source_url or ''
             post.external_source = post.source_name or _extract_domain(post.source_url)
+
+            # Optional video URL → stored as video_urls for MediaProcessor
+            video_url = (form.cleaned_data.get('video_url') or '').strip()
+            if video_url:
+                post.video_urls = [{'url': video_url}]
+                post.has_media = True
         elif post_type == 'profile':
             post.post_type = 'profile_post'
             post.privacy = 'private'

@@ -101,6 +101,19 @@
                     {% endif %}
                 </div>
 
+                {% if post.video %}
+                <section style="margin-top:32px;">
+                    <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">
+                        <i class="fas fa-video" style="color:var(--brand);"></i> Video
+                    </h3>
+                    <video controls preload="metadata"
+                        style="width:100%;border-radius:var(--r);margin-bottom:14px;background:#000;">
+                        <source src="{{ post.video.url }}">
+                        Your browser doesn't support video playback.
+                    </video>
+                </section>
+                {% endif %}
+                
                 {% if not is_guest %}
                     {% if media.has_video %}
                     <section style="margin-top:32px;">

@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
-
+from .validators import validate_video_file
 
 class Category(models.Model):
     """Category model for posts"""
@@ -153,6 +153,15 @@ class Post(models.Model):
     # Media Content
     image = models.ImageField(upload_to='post_images/', blank=True, null=True)
     image_url = models.URLField(max_length=1000, blank=True, null=True)
+
+    # User-uploaded video file (optional — use video_urls for external links)
+    video = models.FileField(
+        upload_to='post_videos/',
+        blank=True,
+        null=True,
+        validators=[validate_video_file],
+        help_text='Upload an MP4, WebM, or MOV file (max 100MB)',
+    )
     video_urls = models.JSONField(null=True, blank=True, default=list)
     audio_urls = models.JSONField(null=True, blank=True, default=list)
     has_media = models.BooleanField(default=False)
@@ -213,6 +222,30 @@ class Post(models.Model):
     # Many-to-Many Relationships
     likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
     bookmarks = models.ManyToManyField(User, related_name='bookmarked_posts', blank=True)
+
+    def save(self, *args, **kwargs):
+        # Auto-flag external articles as news
+        if self.external_id or self.external_url or self.external_source:
+            if self.post_type != 'user_news':
+                self.is_auto_fetched = True
+                if self.post_type == 'discussion':
+                    self.post_type = 'news'
+
+        if self.post_type == 'profile_post':
+            self.profile_only = True
+            self.category = None
+
+        if self.post_type == 'sponsored' and self.advertisement:
+            self.is_sponsored = True
+
+        # Media flag — now also accounts for uploaded video
+        if self.video_urls or self.audio_urls or self.video:
+            self.has_media = True
+
+        if self.status in ['published', 'featured'] and not self.published_at:
+            self.published_at = timezone.now()
+
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['-published_at']
