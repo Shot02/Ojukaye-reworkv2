@@ -14,24 +14,41 @@ logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------
-# Feeds to pull from. Add/remove freely.
-# Format: (display_name, feed_url)
+# Nigerian feeds — primary pool
 # ------------------------------------------------
-DEFAULT_FEEDS = [
-    # International
-    ('BBC Africa',        'https://feeds.bbci.co.uk/news/world/africa/rss.xml'),
-    ('BBC World',         'https://feeds.bbci.co.uk/news/world/rss.xml'),
-    ('Al Jazeera',        'https://www.aljazeera.com/xml/rss/all.xml'),
-    ('Reuters Africa',    'https://feeds.reuters.com/reuters/AFRICATopNews'),
-
-    # Nigerian
+NIGERIAN_FEEDS = [
     ('Premium Times',     'https://www.premiumtimesng.com/feed'),
     ('Punch',             'https://punchng.com/feed'),
     ('Vanguard',          'https://www.vanguardngr.com/feed'),
     ('The Guardian NG',   'https://guardian.ng/feed/'),
-    ('ThisDay',           'https://www.thisdaylive.com/index.php/feed/'),
     ('The Cable',         'https://www.thecable.ng/feed'),
+    ('ThisDay',           'https://www.thisdaylive.com/index.php/feed/'),
+    ('The Nation NG',     'https://thenationonlineng.net/feed/'),
+    ('Leadership',        'https://leadership.ng/feed/'),
+    ('BusinessDay NG',    'https://businessday.ng/feed/'),
+    ('Channels TV',       'https://www.channelstv.com/feed/'),
+    ('Legit NG',          'https://legit.ng/rss/all.rss'),
+    ('Daily Trust',       'https://dailytrust.com/feed/'),
+    ('Tribune NG',        'https://tribuneonlineng.com/feed/'),
+    ('Sahara Reporters',  'https://saharareporters.com/feed'),
+    ('The Sun NG',        'https://www.sunnewsonline.com/feed/'),
+    ('Independent NG',    'https://independent.ng/feed/'),
 ]
+
+
+# ------------------------------------------------
+# International feeds — fallback pool only
+# ------------------------------------------------
+INTERNATIONAL_FEEDS = [
+    ('BBC Africa',        'https://feeds.bbci.co.uk/news/world/africa/rss.xml'),
+    ('BBC World',         'https://feeds.bbci.co.uk/news/world/rss.xml'),
+    ('Al Jazeera',        'https://www.aljazeera.com/xml/rss/all.xml'),
+    ('Reuters Africa',    'https://feeds.reuters.com/reuters/AFRICATopNews'),
+]
+
+
+# Backwards compat — anything importing DEFAULT_FEEDS still works
+DEFAULT_FEEDS = NIGERIAN_FEEDS + INTERNATIONAL_FEEDS
 
 
 USER_AGENT = (
@@ -44,45 +61,70 @@ USER_AGENT = (
 class RSSFetcher:
     """Pulls articles from a list of RSS feeds."""
 
-    def __init__(self, feeds=None):
-        # If feeds are passed, use them. Otherwise try DB.
+    def __init__(self, feeds=None, prefer_nigerian=True):
+        """
+        feeds: optional explicit list of (name, url) tuples.
+        prefer_nigerian: if True, default DB-loaded sources are filtered
+                         to Nigerian sources only (country_hint='Nigeria').
+        """
         if feeds is None:
-            feeds = self._load_from_db()
+            feeds = self._load_from_db(nigerian_only=prefer_nigerian)
             if not feeds:
-                feeds = DEFAULT_FEEDS
+                # Nothing in DB yet — fall back to hardcoded pools
+                feeds = NIGERIAN_FEEDS if prefer_nigerian else DEFAULT_FEEDS
 
         self.feeds = feeds
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': USER_AGENT})
-        
-    def _load_from_db(self):
-        """Load active sources from the database."""
+
+    def _load_from_db(self, nigerian_only: bool = True):
+        """
+        Load active sources from the database.
+        If nigerian_only is True, restrict to sources tagged with Nigeria.
+        """
         try:
             from news.models import NewsSource
-            sources = NewsSource.objects.filter(
+            qs = NewsSource.objects.filter(
                 is_active=True,
                 source_type='rss',
-            ).exclude(last_status='broken').values_list('name', 'url')
+            ).exclude(last_status='broken')
 
-            return [(name, url) for name, url in sources]
+            if nigerian_only:
+                qs = qs.filter(country_hint__iexact='Nigeria')
+
+            return list(qs.values_list('name', 'url'))
         except Exception as e:
             logger.warning(f"Could not load sources from DB: {e}")
             return []
 
     # ---------- public ----------
 
+    def fetch_nigerian(self, limit: int = 50) -> List[Dict]:
+        """Fetch only from Nigerian sources."""
+        return self._fetch_feeds(NIGERIAN_FEEDS, limit=limit, label='NG')
+
+    def fetch_international(self, limit: int = 50) -> List[Dict]:
+        """Fetch only from international sources (used as fallback)."""
+        return self._fetch_feeds(INTERNATIONAL_FEEDS, limit=limit, label='INTL')
+
     def fetch_all(self, limit: int = 50) -> List[Dict]:
         """
-        Pull from every feed, distribute `limit` across them.
-        Returns normalized articles.
+        Legacy method — kept for compatibility.
+        Now delegates to the Nigeria-first version.
         """
-        if not self.feeds:
+        return self.fetch_nigerian(limit=limit)
+
+    # ---------- internals ----------
+
+    def _fetch_feeds(self, feeds: list, limit: int, label: str = '') -> List[Dict]:
+        """Fetch from a specific feed list."""
+        if not feeds:
             return []
 
-        per_feed = max(5, limit // len(self.feeds))
+        per_feed = max(3, limit // len(feeds))
         collected: List[Dict] = []
 
-        for name, url in self.feeds:
+        for name, url in feeds:
             if len(collected) >= limit:
                 break
 
@@ -92,14 +134,13 @@ class RSSFetcher:
             try:
                 articles = self._fetch_one(name, url, take)
                 collected.extend(articles)
-                logger.info(f"RSS '{name}': {len(articles)} articles")
+                logger.info(f"RSS[{label}] '{name}': {len(articles)} articles")
             except Exception as e:
-                logger.warning(f"RSS '{name}' failed: {e}")
+                logger.warning(f"RSS[{label}] '{name}' failed: {e}")
 
-            # Small politeness delay
             time.sleep(0.5)
 
-        logger.info(f"RSS: total {len(collected)} articles collected.")
+        logger.info(f"RSS[{label}]: total {len(collected)} articles collected.")
         return collected[:limit]
 
     # ---------- internals ----------

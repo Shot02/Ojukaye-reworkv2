@@ -149,7 +149,13 @@ class Post(models.Model):
         ],
         default='unknown'
     )
-
+    # Geographic tagging
+    country = models.CharField(
+        max_length=2,
+        blank=True,
+        default='',
+        help_text='ISO 3166-1 alpha-2 country code (e.g. NG for Nigeria)',
+    )
     # Media Content
     image = models.ImageField(upload_to='post_images/', blank=True, null=True)
     image_url = models.URLField(max_length=1000, blank=True, null=True)

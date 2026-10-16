@@ -136,32 +136,73 @@ class NewsPipeline:
 
     # ---------- step 1: fetch ----------
 
+    # Nigerian news domains — used to restrict NewsAPI queries
+    NIGERIA_DOMAINS = (
+        'premiumtimesng.com,punchng.com,vanguardngr.com,'
+        'guardian.ng,thisdaylive.com,thecable.ng,'
+        'thenationonlineng.net,leadership.ng,businessday.ng,'
+        'channelstv.com,legit.ng,dailytrust.com,'
+        'sunnewsonline.com,independent.ng'
+    )
+
     def _fetch_all(self, days: int, limit: int) -> List[Dict]:
-        """Fetch from NewsAPI + RSS, combine into one list."""
-        all_articles = []
+        """
+        Nigeria-first fetch strategy.
 
-        # NewsAPI gets ~half the limit
-        newsapi_limit = max(1, limit // 2)
+        Priority order:
+          1. NewsAPI top-headlines for country=ng
+          2. NewsAPI search restricted to Nigerian domains
+          3. Nigerian RSS feeds (from DB if present, else hardcoded)
+          4. International RSS only if still short
+        """
+        all_articles: List[Dict] = []
+
+        # ----- 1. NewsAPI: Nigeria top headlines -----
+        newsapi_limit = max(10, limit // 3)
         try:
-            newsapi_articles = self.api.fetch_everything(
-                query='Nigeria OR Africa OR world',
-                days=days,
-                limit=newsapi_limit,
-            )
-            all_articles.extend(newsapi_articles)
+            ng_headlines = self.api.fetch_nigeria_headlines(limit=newsapi_limit)
+            all_articles.extend(ng_headlines)
+            logger.info(f"[fetch] NewsAPI NG headlines: {len(ng_headlines)}")
         except Exception as e:
-            logger.error(f"NewsAPI fetch failed: {e}")
+            logger.warning(f"NewsAPI Nigeria headlines failed: {e}")
 
-        # RSS gets the rest
-        rss_limit = limit - len(all_articles)
-        if rss_limit > 0:
+        # ----- 2. NewsAPI: restricted to Nigerian domains -----
+        if len(all_articles) < limit:
+            remaining = limit - len(all_articles)
             try:
-                rss_articles = self.rss.fetch_all(limit=rss_limit)
-                all_articles.extend(rss_articles)
+                domain_articles = self.api.fetch_everything(
+                    query='Nigeria OR Nigerian OR Lagos OR Abuja OR NNPC OR CBN',
+                    days=days,
+                    limit=max(10, remaining // 2),
+                    domains=self.NIGERIA_DOMAINS,
+                )
+                all_articles.extend(domain_articles)
+                logger.info(f"[fetch] NewsAPI NG domains: {len(domain_articles)}")
             except Exception as e:
-                logger.error(f"RSS fetch failed: {e}")
+                logger.warning(f"NewsAPI domain-restricted fetch failed: {e}")
 
-        return all_articles
+        # ----- 3. Nigerian RSS feeds -----
+        if len(all_articles) < limit:
+            remaining = limit - len(all_articles)
+            try:
+                ng_rss = self.rss.fetch_nigerian(limit=remaining)
+                all_articles.extend(ng_rss)
+                logger.info(f"[fetch] Nigerian RSS: {len(ng_rss)}")
+            except Exception as e:
+                logger.warning(f"Nigerian RSS fetch failed: {e}")
+
+        # ----- 4. International fallback (only if still short) -----
+        if len(all_articles) < limit:
+            remaining = limit - len(all_articles)
+            try:
+                intl = self.rss.fetch_international(limit=remaining)
+                all_articles.extend(intl)
+                logger.info(f"[fetch] International fallback: {len(intl)}")
+            except Exception as e:
+                logger.warning(f"International fallback failed: {e}")
+
+        logger.info(f"[fetch] Total collected: {len(all_articles)}")
+        return all_articles[:limit]
 
     # ---------- step 2: extract ----------
 
@@ -315,6 +356,7 @@ class NewsPipeline:
             video_urls=videos if videos else [],
             audio_urls=audios if audios else [],
             meta_description=content[:160],
+            country='NG',
         )
 
         # ---- Run AI verification immediately ----

@@ -53,16 +53,24 @@ class NewsAPIClient:
         data = self._get(f"{NEWSAPI_BASE}/top-headlines", params)
         return self._normalize(data.get('articles', []))
 
+    def fetch_nigeria_headlines(self, limit: int = 50) -> List[Dict]:
+        """
+        Nigeria-only top headlines. Uses NewsAPI's country filter,
+        which is much more precise than a keyword search.
+        """
+        return self.fetch_top_headlines(country='ng', limit=limit)
+
     def fetch_everything(
         self,
         query: str,
         days: int = 1,
         language: str = 'en',
         limit: int = 50,
+        domains: Optional[str] = None,
     ) -> List[Dict]:
         """
         Search all articles matching a query.
-        `days` = how many days back to look.
+        Optionally restrict to specific domains (comma-separated string).
         """
         from_date = (timezone.now() - timedelta(days=days)).strftime('%Y-%m-%d')
         params = {
@@ -73,10 +81,12 @@ class NewsAPIClient:
             'sortBy': 'publishedAt',
             'pageSize': min(limit, 100),
         }
+        if domains:
+            params['domains'] = domains
 
         data = self._get(f"{NEWSAPI_BASE}/everything", params)
         return self._normalize(data.get('articles', []))
-
+    
     # ---------- internals ----------
 
     def _get(self, url: str, params: Dict, retries: int = 2) -> Dict:
